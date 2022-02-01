@@ -13,10 +13,31 @@ setEndpoint('mockup')
 let dummy;
 let multisig;
 
+// constants
+const now = Date.now() / 1000
+
 const owner = getAccount('alice');
-const user1 = getAccount('bob');
-const user2 = getAccount('carl');
-const user3 = getAccount('bootstrap1');
+const manager1 = getAccount('bob');
+const manager2 = getAccount('carl');
+const manager3 = getAccount('bootstrap1');
+
+// utils
+const getCode = (dest, entrypoint, typ, value) => {
+  return `{
+      DROP;
+      NIL operation;
+      PUSH address "${dest}";
+      CONTRACT %${entrypoint} ${typ};
+      IF_NONE
+        { PUSH string "EntryNotFound";
+          FAILWITH }
+        {  };
+      PUSH mutez 0;
+      PUSH ${typ} ${value};
+      TRANSFER_TOKENS;
+      CONS;
+    }`;
+}
 
 describe("Deploy", async () => {
   it("Dummy", async () => {
@@ -40,6 +61,38 @@ describe("Deploy", async () => {
   });
 })
 
+describe("Init", async () => {
+  it("Set time", async () => {
+    setMockupNow(now);
+  });
+
+  it("Add managers", async () => {
+    await multisig.control({
+      arg: {
+        maddr: manager1.pkh,
+        allowed: true
+      },
+      as: owner.pkh
+    })
+    await multisig.control({
+      arg: {
+        maddr: manager2.pkh,
+        allowed: true
+      },
+      as: owner.pkh
+    })
+    await multisig.control({
+      arg: {
+        maddr: manager3.pkh,
+        allowed: true
+      },
+      as: owner.pkh
+    })
+  });
+
+
+})
+
 describe("Dummy check", async () => {
 
   it("Invalid simple caller", async () => {
@@ -48,7 +101,7 @@ describe("Dummy check", async () => {
         arg: {
           v: 1
         },
-        as: user1.pkh
+        as: manager1.pkh
       })
     }, errors.INVALID_CALLER)
   });
@@ -70,26 +123,71 @@ describe("Dummy check", async () => {
 })
 
 
-describe("Test", async () => {
+describe("Test multisig", async () => {
 
   it("Set multisig for owner of dummy", async () => {
     await dummy.set_owner({
-        arg: {
-          v: multisig.address
-        },
-        as: owner.pkh
-      })
+      arg: {
+        v: multisig.address
+      },
+      as: owner.pkh
+    })
   });
 
   it("Check if previous owner cannot call process", async () => {
     await expectToThrow(async () => {
       await dummy.process({
         arg: {
-          v: 1
+          v: 2
         },
         as: owner.pkh
       })
     }, errors.INVALID_CALLER)
+  });
+
+
+  it("Add purpose", async () => {
+    const code = getCode(dummy.address, "process", "nat", "2");
+
+    const expired_duration = 48 * 60 * 60; // 48h
+    const approved_by_caller = 'True';
+
+    const arg = `(Pair ${code} (Pair ${expired_duration} ${approved_by_caller}))`
+    await multisig.propose({
+      argMichelson: arg,
+      as: manager1.pkh
+    })
+  });
+
+  it("Approve", async () => {
+    await multisig.approve({
+      arg: {
+        proposal_id: 0
+      },
+      as: manager2.pkh
+    });
+
+    await multisig.approve({
+      arg: {
+        proposal_id: 0
+      },
+      as: manager3.pkh
+    })
+  });
+
+  it("Execute", async () => {
+    const storage_before = await dummy.getStorage()
+    assert(storage_before.result.toNumber() == 1)
+
+    await multisig.execute({
+      arg: {
+        proposal_id: 0
+      },
+      as: manager1.pkh
+    });
+
+    const storage_after = await dummy.getStorage()
+    assert(storage_after.result.toNumber() == 2)
   });
 
 
