@@ -26,7 +26,7 @@ asset pending to big_map {
 entry execute(proposal_id : nat) {
   called by manager
   require {
-    // r0 : pending[proposal_id].expired < now;
+    r0 : pending[proposal_id].expired < now;
     r1 : length(pending[proposal_id].approvals) >= required otherwise NOT_APPROVED
   }
   effect {
