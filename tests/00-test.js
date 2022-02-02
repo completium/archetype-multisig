@@ -105,9 +105,9 @@ describe("Init", async () => {
 
 })
 
-describe("Basic check", async () => {
+describe("Basic check on Dummy contract", async () => {
 
-  it("Invalid simple caller", async () => {
+  it("Invalid caller", async () => {
     await expectToThrow(async () => {
       await dummy.process({
         arg: {
@@ -118,7 +118,7 @@ describe("Basic check", async () => {
     }, errors.INVALID_CALLER)
   });
 
-  it("Check if owner can call process", async () => {
+  it("Owner can call Dummy's process", async () => {
     const storage_before = await dummy.getStorage()
     assert(storage_before.result.toNumber() == 0)
 
@@ -134,8 +134,7 @@ describe("Basic check", async () => {
 
 })
 
-
-describe("Test multisig", async () => {
+describe("Test Multisig", async () => {
 
   it("Set Multisig as Dummy's owner", async () => {
     await dummy.set_owner({
@@ -157,7 +156,22 @@ describe("Test multisig", async () => {
     }, errors.INVALID_CALLER)
   });
 
-  it("Add purpose and approve by Manager1", async () => {
+  it("Previous owner cannot add proposal", async () => {
+    const code = getCode(dummy.address, "process", "nat", "" + expected_result);
+
+    const expired_duration = 48 * 60 * 60; // 48h
+    const approved_by_caller = 'True';
+
+    await expectToThrow(async () => {
+      const arg = `(Pair ${code} (Pair ${expired_duration} ${approved_by_caller}))`
+      await multisig.propose({
+        argMichelson: arg,
+        as: owner.pkh
+      })
+    }, errors.INVALID_CALLER)
+  });
+
+  it("Add proposal and approve by Manager1", async () => {
     const code = getCode(dummy.address, "process", "nat", "" + expected_result);
 
     const expired_duration = 48 * 60 * 60; // 48h
@@ -231,6 +245,65 @@ describe("Test multisig", async () => {
 
     const storage_after = await dummy.getStorage()
     assert(storage_after.result.toNumber() == expected_result)
+  });
+
+})
+
+describe("Test Multisig 2", async () => {
+
+  it("Add proposal by Manager1", async () => {
+    const code = getCode(dummy.address, "process", "nat", "" + (2 * expected_result));
+
+    const expired_duration = 48 * 60 * 60; // 48h
+    const approved_by_caller = 'False';
+
+    const arg = `(Pair ${code} (Pair ${expired_duration} ${approved_by_caller}))`
+    await multisig.propose({
+      argMichelson: arg,
+      as: manager1.pkh
+    })
+  });
+
+  it("Approve by Managers 1, 2 and 3", async () => {
+    await multisig.approve({
+      arg: {
+        proposal_id: 1
+      },
+      as: manager1.pkh
+    });
+
+    await multisig.approve({
+      arg: {
+        proposal_id: 1
+      },
+      as: manager2.pkh
+    });
+
+    await multisig.approve({
+      arg: {
+        proposal_id: 1
+      },
+      as: manager3.pkh
+    })
+  });
+
+  it("Set 'now' before expiration date", async () => {
+    setMockupNow(now + 47 * 60 * 60);
+  });
+
+  it("Execute (by previous Dummy's owner)", async () => {
+    const storage_before = await dummy.getStorage()
+    assert(storage_before.result.toNumber() == expected_result)
+
+    await multisig.execute({
+      arg: {
+        proposal_id: 1
+      },
+      as: owner.pkh
+    });
+
+    const storage_after = await dummy.getStorage()
+    assert(storage_after.result.toNumber() == 2 * expected_result)
   });
 
 })
