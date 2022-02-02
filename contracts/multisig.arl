@@ -19,7 +19,6 @@ asset manager {
 asset pending to big_map {
   id         : nat;
   expiration : date;
-  //approvals : set<pkey<manager>>;
   approvals  : set<address>;
   actions    : lambda<unit, list<operation>>;
 }
