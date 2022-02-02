@@ -37,8 +37,8 @@ entry execute(proposal_id : nat) {
 
 entry execute_feeless(proposal_id : nat, manager_key : key, s : signature) {
   require {
-    r5 : now < pending[proposal_id].expiration;
-    r6 : length(pending[proposal_id].approvals) >= required otherwise NOT_APPROVED;
+    r5 : pending[proposal_id].expiration >= now otherwise EXPIRED_PROPOSAL;
+    r6 : length(pending[proposal_id].approvals) >= required otherwise NOT_APPROVED
   }
   effect {
     var pkh = key_address(manager_key);
