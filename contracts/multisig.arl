@@ -114,6 +114,11 @@ entry %require(new_required : nat) {
   }
 }
 
-getter getManagerCounter(pkh : address) : nat {
+getter get_manager_counter(pkh : address) : nat {
   return (if manager.contains(pkh) then manager[pkh].counter else 0)
+}
+
+getter get_approvals(proposal_id : nat) : set<address> {
+  var empty : set<address> = [];
+  return (if pending.contains(proposal_id) then pending[proposal_id].approvals else empty)
 }
