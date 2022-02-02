@@ -2,7 +2,9 @@ const { deploy, getAccount, setQuiet, expectToThrow, setMockupNow, setEndpoint }
 const assert = require('assert');
 
 const errors = {
-  INVALID_CALLER: '"InvalidCaller"',
+  INVALID_CALLER   : '"InvalidCaller"',
+  NOT_APPROVED     : '"NOT_APPROVED"',
+  EXPIRED_PROPOSAL : '"EXPIRED_PROPOSAL"'
 }
 
 setQuiet(true);
@@ -168,6 +170,17 @@ describe("Test multisig", async () => {
     })
   });
 
+  it("Manager 1 cannot execute", async () => {
+    await expectToThrow(async () => {
+      await multisig.execute({
+        arg: {
+          proposal_id: 0
+        },
+        as: manager1.pkh
+      })
+    }, errors.NOT_APPROVED);
+  })
+
   it("Approve by Manager2 and Manager3", async () => {
     await multisig.approve({
       arg: {
@@ -188,6 +201,23 @@ describe("Test multisig", async () => {
     setMockupNow(now + 49 * 60 * 60);
   });
 
+  it("Proposal is expired", async () => {
+   
+    await expectToThrow(async () => {
+      await multisig.execute({
+        arg: {
+          proposal_id: 0
+        },
+        as: manager1.pkh
+      })
+    }, errors.EXPIRED_PROPOSAL);
+   
+  });
+
+  it("Set 'now' before expiration date", async () => {
+    setMockupNow(now + 47 * 60 * 60);
+  });
+
   it("Execute", async () => {
     const storage_before = await dummy.getStorage()
     assert(storage_before.result.toNumber() == 1)
@@ -202,6 +232,5 @@ describe("Test multisig", async () => {
     const storage_after = await dummy.getStorage()
     assert(storage_after.result.toNumber() == expected_result)
   });
-
 
 })

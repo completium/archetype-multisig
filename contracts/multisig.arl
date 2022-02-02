@@ -6,6 +6,7 @@ variable id_count : nat = 0
 variable max_duration : duration = 180d
 variable min_duration : duration = 1h
 
+constant EXPIRED_PROPOSAL  : string = "EXPIRED_PROPOSAL"
 constant NOT_APPROVED      : string = "NOT_APPROVED"
 constant INVALID_SIGNATURE : string = "INVALID_SIGNATURE"
 constant WRONG_DURATION    : string = "WRONG_DURATION"
@@ -16,17 +17,17 @@ asset manager {
 }
 
 asset pending to big_map {
-  id      : nat;
-  expired : date;
+  id         : nat;
+  expiration : date;
   //approvals : set<pkey<manager>>;
-  approvals : set<address>;
-  actions   : lambda<unit, list<operation>>;
+  approvals  : set<address>;
+  actions    : lambda<unit, list<operation>>;
 }
 
 entry execute(proposal_id : nat) {
   called by manager
   require {
-    r0 : pending[proposal_id].expired < now;
+    r0 : pending[proposal_id].expiration >= now otherwise EXPIRED_PROPOSAL;
     r1 : length(pending[proposal_id].approvals) >= required otherwise NOT_APPROVED
   }
   effect {
@@ -37,7 +38,7 @@ entry execute(proposal_id : nat) {
 
 entry execute_feeless(proposal_id : nat, manager_key : key, s : signature) {
   require {
-    r5 : now < pending[proposal_id].expired;
+    r5 : now < pending[proposal_id].expiration;
     r6 : length(pending[proposal_id].approvals) >= required otherwise NOT_APPROVED;
   }
   effect {
@@ -52,7 +53,7 @@ entry execute_feeless(proposal_id : nat, manager_key : key, s : signature) {
 entry approve(proposal_id : nat) {
   called by manager
   effect {
-    if pending[proposal_id].expired < now then
+    if pending[proposal_id].expiration < now then
       pending.remove(proposal_id)
     else
       pending[proposal_id].approvals.add(caller)
@@ -63,7 +64,7 @@ entry approve_feeless(proposal_id : nat, manager_key : key, s : signature) {
   var pkh = key_address(manager_key);
   dorequire(check_signature(manager_key, s, pack((pkh, manager[pkh].counter, "approve", proposal_id))), INVALID_SIGNATURE);
   manager[pkh].counter += 1;
-  if pending[proposal_id].expired < now then
+  if pending[proposal_id].expiration < now then
     pending.remove(proposal_id)
   else
     pending[proposal_id].approvals.add(pkh)
@@ -71,11 +72,11 @@ entry approve_feeless(proposal_id : nat, manager_key : key, s : signature) {
 
 entry propose(
   actions_to_exec : lambda<unit, list<operation>>,
-  expired_duration : duration,
+  expiration_duration : duration,
   approved_by_caller : bool) {
   called by manager
   require {
-    r2 : min_duration <= expired_duration <= max_duration otherwise WRONG_DURATION
+    r2 : min_duration <= expiration_duration <= max_duration otherwise WRONG_DURATION
   }
   effect {
     var init_approvals : set<address> = [];
@@ -83,7 +84,7 @@ entry propose(
       init_approvals.add(caller);
     pending.add({
       id_count;
-      (now + expired_duration);
+      (now + expiration_duration);
       init_approvals;
       actions_to_exec
     });
