@@ -1,6 +1,6 @@
 archetype multisig(owner : address)
 
-variable required : nat = 3
+variable required : nat = 5
 variable id_count : nat = 0
 
 variable max_duration : duration = 180d
