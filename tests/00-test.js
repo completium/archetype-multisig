@@ -218,7 +218,7 @@ describe("Test multisig", async () => {
     setMockupNow(now + 47 * 60 * 60);
   });
 
-  it("Execute", async () => {
+  it("Execute (by previous Dummy's owner)", async () => {
     const storage_before = await dummy.getStorage()
     assert(storage_before.result.toNumber() == 1)
 
@@ -226,7 +226,7 @@ describe("Test multisig", async () => {
       arg: {
         proposal_id: 0
       },
-      as: manager1.pkh
+      as: owner.pkh
     });
 
     const storage_after = await dummy.getStorage()
