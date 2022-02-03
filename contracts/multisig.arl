@@ -141,56 +141,9 @@ entry %require(new_required : nat) {
   }
 }
 
-entry execute(proposal_id : nat) {
-  state is Running
-  require {
-    r1 : pending[proposal_id].expiration >= now otherwise EXPIRED_PROPOSAL;
-    r2 : length(pending[proposal_id].approvals) >= required otherwise NOT_APPROVED
-  }
-  effect {
-    operations := exec_lambda(pending[proposal_id].actions, Unit);
-    pending.remove(proposal_id)
-  }
-}
-
-entry execute_feeless(proposal_id : nat, manager_key : key, s : signature) {
-  state is Running
-  require {
-    r5 : pending[proposal_id].expiration >= now otherwise EXPIRED_PROPOSAL;
-    r6 : length(pending[proposal_id].approvals) >= required otherwise NOT_APPROVED
-  }
-  effect {
-    var pkh = key_address(manager_key);
-    dorequire(check_signature(manager_key, s, pack((pkh, manager[pkh].counter, "execute", proposal_id))), INVALID_SIGNATURE);
-    manager[pkh].counter += 1;
-    operations := exec_lambda(pending[proposal_id].actions, Unit);
-    pending.remove(proposal_id);
-  }
-}
-
-entry approve(proposal_id : nat) {
-  called by manager
-  state is Running
-  effect {
-    if pending[proposal_id].expiration < now then
-      pending.remove(proposal_id)
-    else
-      pending[proposal_id].approvals.add(caller)
-  }
-}
-
-entry approve_feeless(proposal_id : nat, manager_key : key, s : signature) {
-  state is Running
-  effect {
-    var pkh = key_address(manager_key);
-    dorequire(check_signature(manager_key, s, pack((pkh, manager[pkh].counter, "approve", proposal_id))), INVALID_SIGNATURE);
-    manager[pkh].counter += 1;
-    if pending[proposal_id].expiration < now then
-      pending.remove(proposal_id)
-    else
-      pending[proposal_id].approvals.add(pkh)
-  }
-}
+//----------------------------------------------------------------------------
+// propose, approve, execute 
+//----------------------------------------------------------------------------
 
 entry propose(
   actions_to_exec : lambda<unit, list<operation>>,
@@ -212,6 +165,87 @@ entry propose(
       actions_to_exec
     });
     id_count += 1;
+  }
+}
+
+entry approve(proposal_id : nat) {
+  called by manager
+  state is Running
+  effect {
+    if pending[proposal_id].expiration < now then
+      pending.remove(proposal_id)
+    else
+      pending[proposal_id].approvals.add(caller)
+  }
+}
+
+entry execute(proposal_id : nat) {
+  state is Running
+  require {
+    r1 : pending[proposal_id].expiration >= now otherwise EXPIRED_PROPOSAL;
+    r2 : length(pending[proposal_id].approvals) >= required otherwise NOT_APPROVED
+  }
+  effect {
+    operations := exec_lambda(pending[proposal_id].actions, Unit);
+    pending.remove(proposal_id)
+  }
+}
+
+//----------------------------------------------------------------------------
+// Fee-less process
+//----------------------------------------------------------------------------
+
+entry propose_feeless(
+  actions_to_exec : lambda<unit, list<operation>>,
+  expiration_duration : duration,
+  approved_by_caller : bool,
+  manager_key : key, 
+  sig : signature) {
+  state is Running
+  require {
+    r8 : min_duration <= expiration_duration <= max_duration otherwise WRONG_DURATION
+  }
+  effect {
+    var pkh = key_address(manager_key);
+    dorequire(check_signature(manager_key, sig, pack((pkh, manager[pkh].counter, "propose", actions_to_exec, expiration_duration))), INVALID_SIGNATURE);
+    var init_approvals : set<address> = [];
+    if approved_by_caller then
+      init_approvals.add(caller);
+    pending.add({
+      id_count;
+      (now + expiration_duration);
+      init_approvals;
+      actions_to_exec
+    });
+    id_count += 1;
+  }
+}
+
+entry approve_feeless(proposal_id : nat, manager_key : key, sig : signature) {
+  state is Running
+  effect {
+    var pkh = key_address(manager_key);
+    dorequire(check_signature(manager_key, sig, pack((pkh, manager[pkh].counter, "approve", proposal_id))), INVALID_SIGNATURE);
+    manager[pkh].counter += 1;
+    if pending[proposal_id].expiration < now then
+      pending.remove(proposal_id)
+    else
+      pending[proposal_id].approvals.add(pkh)
+  }
+}
+
+entry execute_feeless(proposal_id : nat, manager_key : key, sig : signature) {
+  state is Running
+  require {
+    r5 : pending[proposal_id].expiration >= now otherwise EXPIRED_PROPOSAL;
+    r6 : length(pending[proposal_id].approvals) >= required otherwise NOT_APPROVED
+  }
+  effect {
+    var pkh = key_address(manager_key);
+    dorequire(check_signature(manager_key, sig, pack((pkh, manager[pkh].counter, "execute", proposal_id))), INVALID_SIGNATURE);
+    manager[pkh].counter += 1;
+    operations := exec_lambda(pending[proposal_id].actions, Unit);
+    pending.remove(proposal_id);
   }
 }
 
