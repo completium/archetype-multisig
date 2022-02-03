@@ -8,10 +8,20 @@ archetype multisig(
   min_duration : duration
 )
 
-constant EXPIRED_PROPOSAL  : string = "EXPIRED_PROPOSAL"
-constant NOT_APPROVED      : string = "NOT_APPROVED"
-constant INVALID_SIGNATURE : string = "INVALID_SIGNATURE"
-constant WRONG_DURATION    : string = "WRONG_DURATION"
+//----------------------------------------------------------------------------
+// Errors
+//----------------------------------------------------------------------------
+
+constant EXPIRED_PROPOSAL    : string = "EXPIRED_PROPOSAL"
+constant NOT_APPROVED        : string = "NOT_APPROVED"
+constant INVALID_SIGNATURE   : string = "INVALID_SIGNATURE"
+constant WRONG_DURATION      : string = "WRONG_DURATION"
+constant CONTRACT_PAUSED     : string = "CONTRACT_PAUSED"
+constant CONTRACT_NOT_PAUSED : string = "CONTRACT_NOT_PAUSED"
+
+//----------------------------------------------------------------------------
+// Assets
+//----------------------------------------------------------------------------
 
 variable id_count : nat = 0
 asset manager {
@@ -27,8 +37,7 @@ asset pending to big_map {
 }
 
 //----------------------------------------------------------------------------
-// Control entry to add / remove a manager
-// May be called in Starting or Running states
+// States
 //----------------------------------------------------------------------------
 
 states = 
@@ -37,13 +46,59 @@ states =
 | Paused
 
 //----------------------------------------------------------------------------
+// Owner role transfer
+//----------------------------------------------------------------------------
+
+variable owner_candidate : option<address> = none
+
+entry declare_ownership(candidate : address) {
+  called by owner
+  effect {
+    owner_candidate := some(candidate);
+  }
+}
+
+entry claim_ownership() {
+  called by opt_get(owner_candidate)
+  effect {
+    owner := opt_get(owner_candidate);
+    owner_candidate := none
+  }
+}
+
+//----------------------------------------------------------------------------
+// Metadata
+//----------------------------------------------------------------------------
+
+entry set_metadata_uri(idata : bytes) {
+  called by owner
+  effect {
+    metadata := put(metadata, "", idata)
+  }
+}
+
+//----------------------------------------------------------------------------
+// Contract execution pause/resume
+//----------------------------------------------------------------------------
+
+transition pause() {
+  called by owner
+  from Running to Paused
+}
+
+transition unpause() {
+  called by owner
+  from Paused to Running
+}
+
+//----------------------------------------------------------------------------
 // Control entry to add / remove a manager
 // May be called in Starting or Running states
 //----------------------------------------------------------------------------
 
 entry control(maddr : address, allowed : bool) {
   called by owner
-  // state is Starting or Running
+  //state is Starting or Running
   require {
     r4 : allowed <> manager.contains(maddr)
   }
@@ -63,7 +118,7 @@ entry control(maddr : address, allowed : bool) {
 transition run() {
   called by owner
   require {
-    r0 : manager.count() >= required 
+    r0 : manager.count() > required 
   }
   from Starting to Running
   with effect {
@@ -160,7 +215,9 @@ entry propose(
   }
 }
 
-
+//----------------------------------------------------------------------------
+// Getters (aka TZIP4 view)
+//----------------------------------------------------------------------------
 
 getter get_manager_counter(pkh : address) : nat {
   return (if manager.contains(pkh) then manager[pkh].counter else 0)

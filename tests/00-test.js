@@ -60,7 +60,7 @@ describe("Deploy", async () => {
     [multisig, _] = await deploy('./contracts/multisig.arl', {
       parameters: {
         owner: owner.pkh,
-        required : 5,
+        required : 1,
         max_duration : MAX_DURATION,
         min_duration : MIN_DURATION
       },
@@ -99,14 +99,59 @@ describe("Init", async () => {
     })
   });
 
-  it("Set nb of approvals to 3", async () => {
-    await multisig.require({
-      arg: { 
-        new_required : "3" 
-      },
-      as: owner.pkh
+  it("Run", async () => {
+    await multisig.run({
+      as : owner.pkh
     })
   })
+
+})
+
+describe("Change requested value", async () => {
+  
+  it("Propose 'request' action by manager1", async () => {
+    const code = getCode(multisig.address, "require", "nat", "2");
+
+    const expired_duration = 48 * 60 * 60; // 48h
+    const approved_by_caller = 'True';
+
+    const arg = `(Pair ${code} (Pair ${expired_duration} ${approved_by_caller}))`
+    await multisig.propose({
+      argMichelson: arg,
+      as: manager1.pkh
+    })
+  });
+
+  it("Approve by Manager2 and Manager3", async () => {
+    await multisig.approve({
+      arg: {
+        proposal_id: 0
+      },
+      as: manager2.pkh
+    });
+
+    await multisig.approve({
+      arg: {
+        proposal_id: 0
+      },
+      as: manager3.pkh
+    })
+  });
+
+  it("Execute (by previous contract's owner)", async () => {
+    const storage_before = await multisig.getStorage()
+    assert(storage_before.required.toNumber() == 1)
+
+    await multisig.execute({
+      arg: {
+        proposal_id: 0
+      },
+      as: owner.pkh
+    });
+
+    const storage_after = await multisig.getStorage()
+    assert(storage_after.required.toNumber() == 2)
+  });
 
 })
 
@@ -193,7 +238,7 @@ describe("Test Multisig", async () => {
     await expectToThrow(async () => {
       await multisig.execute({
         arg: {
-          proposal_id: 0
+          proposal_id: 1
         },
         as: manager1.pkh
       })
@@ -203,14 +248,14 @@ describe("Test Multisig", async () => {
   it("Approve by Manager2 and Manager3", async () => {
     await multisig.approve({
       arg: {
-        proposal_id: 0
+        proposal_id: 1
       },
       as: manager2.pkh
     });
 
     await multisig.approve({
       arg: {
-        proposal_id: 0
+        proposal_id: 1
       },
       as: manager3.pkh
     })
@@ -225,7 +270,7 @@ describe("Test Multisig", async () => {
     await expectToThrow(async () => {
       await multisig.execute({
         arg: {
-          proposal_id: 0
+          proposal_id: 1
         },
         as: manager1.pkh
       })
@@ -243,7 +288,7 @@ describe("Test Multisig", async () => {
 
     await multisig.execute({
       arg: {
-        proposal_id: 0
+        proposal_id: 1
       },
       as: owner.pkh
     });
@@ -272,21 +317,21 @@ describe("Test Multisig 2", async () => {
   it("Approve by Managers 1, 2 and 3", async () => {
     await multisig.approve({
       arg: {
-        proposal_id: 1
+        proposal_id: 2
       },
       as: manager1.pkh
     });
 
     await multisig.approve({
       arg: {
-        proposal_id: 1
+        proposal_id: 2
       },
       as: manager2.pkh
     });
 
     await multisig.approve({
       arg: {
-        proposal_id: 1
+        proposal_id: 2
       },
       as: manager3.pkh
     })
@@ -302,7 +347,7 @@ describe("Test Multisig 2", async () => {
 
     await multisig.execute({
       arg: {
-        proposal_id: 1
+        proposal_id: 2
       },
       as: owner.pkh
     });
