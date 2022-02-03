@@ -1,4 +1,4 @@
-const { deploy, getAccount, setQuiet, expectToThrow, setMockupNow, setEndpoint } = require('@completium/completium-cli');
+const { deploy, getAccount, setQuiet, expectToThrow, setMockupNow, setEndpoint, exprMichelineToJson, packTyped, sign } = require('@completium/completium-cli');
 const assert = require('assert');
 
 const errors = {
@@ -108,7 +108,7 @@ describe("Init", async () => {
 })
 
 describe("Change requested value", async () => {
-  
+
   it("Propose 'request' action by manager1", async () => {
     const code = getCode(multisig.address, "require", "nat", "2");
 
@@ -266,7 +266,7 @@ describe("Test Multisig", async () => {
   });
 
   it("Proposal is expired", async () => {
-   
+
     await expectToThrow(async () => {
       await multisig.execute({
         arg: {
@@ -275,7 +275,7 @@ describe("Test Multisig", async () => {
         as: manager1.pkh
       })
     }, errors.EXPIRED_PROPOSAL);
-   
+
   });
 
   it("Set 'now' before expiration date", async () => {
@@ -354,6 +354,15 @@ describe("Test Multisig 2", async () => {
 
     const storage_after = await dummy.getStorage()
     assert(storage_after.result.toNumber() == 2 * expected_result)
+  });
+
+  it("Sig", async () => {
+    const dataType = exprMichelineToJson("(pair address (pair nat (pair string nat)))");
+    const data = exprMichelineToJson(`(Pair "${pkh}" (Pair ${counter} (Pair "${entryname}" ${proposal_id})))`);
+    const tosign = packTyped(data, dataType);
+    const signature = await sign(tosign, { as: manager1.name });
+    const sig = signature.prefixSig
+
   });
 
 })
