@@ -16,6 +16,8 @@ let dummy;
 let multisig;
 
 // constants
+const MAX_DURATION = 180 * 24 * 60 * 60
+const MIN_DURATION = 60 * 60
 const now = Date.now() / 1000
 
 const owner = getAccount('alice');
@@ -57,7 +59,10 @@ describe("Deploy", async () => {
   it("Multisig", async () => {
     [multisig, _] = await deploy('./contracts/multisig.arl', {
       parameters: {
-        owner: owner.pkh
+        owner: owner.pkh,
+        required : 5,
+        max_duration : MAX_DURATION,
+        min_duration : MIN_DURATION
       },
       named: 'test_unit_multisig_multisig',
       as: owner.pkh

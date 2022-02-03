@@ -1,16 +1,20 @@
-archetype multisig(owner : address)
-
-variable required : nat = 5
-variable id_count : nat = 0
-
-variable max_duration : duration = 180d
-variable min_duration : duration = 1h
+/**
+ * Generic multisig contract
+ */
+archetype multisig(
+  owner        : address,
+  required     : nat,
+  max_duration : duration,
+  min_duration : duration
+)
 
 constant EXPIRED_PROPOSAL  : string = "EXPIRED_PROPOSAL"
 constant NOT_APPROVED      : string = "NOT_APPROVED"
 constant INVALID_SIGNATURE : string = "INVALID_SIGNATURE"
 constant WRONG_DURATION    : string = "WRONG_DURATION"
 
+
+variable id_count : nat = 0
 asset manager {
   addr    : address;
   counter : nat = 0  // protects from double-spending attack
