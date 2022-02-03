@@ -1,4 +1,4 @@
-const { deploy, getAccount, setQuiet, expectToThrow, setMockupNow, setEndpoint, exprMichelineToJson, packTyped, sign } = require('@completium/completium-cli');
+const { deploy, getAccount, setQuiet, expectToThrow, setMockupNow, setEndpoint, exprMichelineToJson, packTyped, sign, runGetter } = require('@completium/completium-cli');
 const assert = require('assert');
 
 const errors = {
@@ -364,5 +364,14 @@ describe("Test Multisig 2", async () => {
     const sig = signature.prefixSig
 
   });
+
+  it("Check can_transfer", async function () {
+    const output = await runGetter("can_transfer", dummy.address, {
+      argMichelson: `(Pair 0 "string")`,
+      as: minter.pkh
+    });
+
+    assert(output == '(Pair 0 "string")', 'test');
+  })
 
 })
