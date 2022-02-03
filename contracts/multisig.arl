@@ -40,7 +40,7 @@ asset pending to big_map {
 // States
 //----------------------------------------------------------------------------
 
-states = 
+states =
 | Starting initial
 | Running
 | Paused
@@ -112,13 +112,13 @@ entry control(maddr : address, allowed : bool) {
 
 //----------------------------------------------------------------------------
 // Transition to Running state
-// owner becomes selfaddress 
+// owner becomes selfaddress
 //----------------------------------------------------------------------------
 
 transition run() {
   called by owner
   require {
-    r0 : manager.count() > required 
+    r0 : manager.count() > required
   }
   from Starting to Running
   with effect {
@@ -127,7 +127,7 @@ transition run() {
 }
 
 //----------------------------------------------------------------------------
-// Set parameters in Running state 
+// Set parameters in Running state
 //----------------------------------------------------------------------------
 
 entry %require(new_required : nat) {
@@ -142,7 +142,7 @@ entry %require(new_required : nat) {
 }
 
 //----------------------------------------------------------------------------
-// propose, approve, execute 
+// propose, approve, execute
 //----------------------------------------------------------------------------
 
 entry propose(
@@ -199,7 +199,7 @@ entry propose_feeless(
   actions_to_exec : lambda<unit, list<operation>>,
   expiration_duration : duration,
   approved_by_caller : bool,
-  manager_key : key, 
+  manager_key : key,
   sig : signature) {
   state is Running
   require {
@@ -231,21 +231,6 @@ entry approve_feeless(proposal_id : nat, manager_key : key, sig : signature) {
       pending.remove(proposal_id)
     else
       pending[proposal_id].approvals.add(pkh)
-  }
-}
-
-entry execute_feeless(proposal_id : nat, manager_key : key, sig : signature) {
-  state is Running
-  require {
-    r5 : pending[proposal_id].expiration >= now otherwise EXPIRED_PROPOSAL;
-    r6 : length(pending[proposal_id].approvals) >= required otherwise NOT_APPROVED
-  }
-  effect {
-    var pkh = key_address(manager_key);
-    dorequire(check_signature(manager_key, sig, pack((pkh, manager[pkh].counter, "execute", proposal_id))), INVALID_SIGNATURE);
-    manager[pkh].counter += 1;
-    operations := exec_lambda(pending[proposal_id].actions, Unit);
-    pending.remove(proposal_id);
   }
 }
 
