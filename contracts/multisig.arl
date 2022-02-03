@@ -13,7 +13,6 @@ constant NOT_APPROVED      : string = "NOT_APPROVED"
 constant INVALID_SIGNATURE : string = "INVALID_SIGNATURE"
 constant WRONG_DURATION    : string = "WRONG_DURATION"
 
-
 variable id_count : nat = 0
 asset manager {
   addr    : address;
@@ -27,10 +26,71 @@ asset pending to big_map {
   actions    : lambda<unit, list<operation>>;
 }
 
-entry execute(proposal_id : nat) {
+//----------------------------------------------------------------------------
+// Control entry to add / remove a manager
+// May be called in Starting or Running states
+//----------------------------------------------------------------------------
+
+states = 
+| Starting initial
+| Running
+| Paused
+
+//----------------------------------------------------------------------------
+// Control entry to add / remove a manager
+// May be called in Starting or Running states
+//----------------------------------------------------------------------------
+
+entry control(maddr : address, allowed : bool) {
+  called by owner
+  // state is Starting or Running
   require {
-    r0 : pending[proposal_id].expiration >= now otherwise EXPIRED_PROPOSAL;
-    r1 : length(pending[proposal_id].approvals) >= required otherwise NOT_APPROVED
+    r4 : allowed <> manager.contains(maddr)
+  }
+  effect {
+    if allowed then
+      manager.add({ addr = maddr })
+    else
+      manager.remove(maddr)
+  }
+}
+
+//----------------------------------------------------------------------------
+// Transition to Running state
+// owner becomes selfaddress 
+//----------------------------------------------------------------------------
+
+transition run() {
+  called by owner
+  require {
+    r0 : manager.count() >= required 
+  }
+  from Starting to Running
+  with effect {
+    owner := selfaddress
+  }
+}
+
+//----------------------------------------------------------------------------
+// Set parameters in Running state 
+//----------------------------------------------------------------------------
+
+entry %require(new_required : nat) {
+  called by owner
+  state is Running
+  require {
+    r7 : 0 < new_required <= manager.count()
+  }
+  effect {
+    required := new_required
+  }
+}
+
+entry execute(proposal_id : nat) {
+  state is Running
+  require {
+    r1 : pending[proposal_id].expiration >= now otherwise EXPIRED_PROPOSAL;
+    r2 : length(pending[proposal_id].approvals) >= required otherwise NOT_APPROVED
   }
   effect {
     operations := exec_lambda(pending[proposal_id].actions, Unit);
@@ -39,6 +99,7 @@ entry execute(proposal_id : nat) {
 }
 
 entry execute_feeless(proposal_id : nat, manager_key : key, s : signature) {
+  state is Running
   require {
     r5 : pending[proposal_id].expiration >= now otherwise EXPIRED_PROPOSAL;
     r6 : length(pending[proposal_id].approvals) >= required otherwise NOT_APPROVED
@@ -54,6 +115,7 @@ entry execute_feeless(proposal_id : nat, manager_key : key, s : signature) {
 
 entry approve(proposal_id : nat) {
   called by manager
+  state is Running
   effect {
     if pending[proposal_id].expiration < now then
       pending.remove(proposal_id)
@@ -63,13 +125,16 @@ entry approve(proposal_id : nat) {
 }
 
 entry approve_feeless(proposal_id : nat, manager_key : key, s : signature) {
-  var pkh = key_address(manager_key);
-  dorequire(check_signature(manager_key, s, pack((pkh, manager[pkh].counter, "approve", proposal_id))), INVALID_SIGNATURE);
-  manager[pkh].counter += 1;
-  if pending[proposal_id].expiration < now then
-    pending.remove(proposal_id)
-  else
-    pending[proposal_id].approvals.add(pkh)
+  state is Running
+  effect {
+    var pkh = key_address(manager_key);
+    dorequire(check_signature(manager_key, s, pack((pkh, manager[pkh].counter, "approve", proposal_id))), INVALID_SIGNATURE);
+    manager[pkh].counter += 1;
+    if pending[proposal_id].expiration < now then
+      pending.remove(proposal_id)
+    else
+      pending[proposal_id].approvals.add(pkh)
+  }
 }
 
 entry propose(
@@ -77,8 +142,9 @@ entry propose(
   expiration_duration : duration,
   approved_by_caller : bool) {
   called by manager
+  state is Running
   require {
-    r2 : min_duration <= expiration_duration <= max_duration otherwise WRONG_DURATION
+    r3 : min_duration <= expiration_duration <= max_duration otherwise WRONG_DURATION
   }
   effect {
     var init_approvals : set<address> = [];
@@ -94,28 +160,7 @@ entry propose(
   }
 }
 
-entry control(maddr : address, allowed : bool) {
-  called by owner
-  require {
-    r3 : allowed <> manager.contains(maddr)
-  }
-  effect {
-    if allowed then
-      manager.add({ addr = maddr })
-    else
-      manager.remove(maddr)
-  }
-}
 
-entry %require(new_required : nat) {
-  called by owner
-  require {
-    r4 : 0 < new_required <= manager.count()
-  }
-  effect {
-    required := new_required
-  }
-}
 
 getter get_manager_counter(pkh : address) : nat {
   return (if manager.contains(pkh) then manager[pkh].counter else 0)
