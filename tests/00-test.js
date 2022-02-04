@@ -381,7 +381,7 @@ describe("Feeless process (propose, approve)", async () => {
     const signature = await sign(tosign, { as: manager1.name }); // signed by manager1
     const sig       = signature.prefixSig
 
-    const arg = `(Pair ${code} (Pair ${expired_duration} (Pair ${approved_by_caller} (Pair ${sig} ${pk}))))`
+    const arg = `(Pair ${code} (Pair ${expired_duration} (Pair ${approved_by_caller} (Pair "${pk}" "${sig}"))))`
     await multisig.propose_feeless({
       argMichelson: arg,
       as: owner.pkh
