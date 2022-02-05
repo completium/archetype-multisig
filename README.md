@@ -21,6 +21,19 @@ where:
 * `$MIN` is the minimum validity duration of a proposal
 * `$MAX` is the maximum validity duration of a proposal
 
+## Run tests
+
+The first time, install dependencies with:
+```
+$ npm i
+```
+
+Execute tests ([00-test.js](./tests/00-tests.js)) with:
+
+```bash
+$ npm test
+```
+
 ## Propose
 
 A proposal is made of a list of operations materialised as a lambda value of type `lambda unit (list operation)`, that is a function with no argument that returns a list of operations.
@@ -123,39 +136,48 @@ The feeless approach splits the process in two:
 
  Each manager is associated to a counter that is incremented by the contract each time a feeless entry is called. This is a security feature to prevent from replay attack (so that one cannot use the signed data twice).
 
+## API
+
+| Entrypoint | Called by | Argument Michelson type | Argument | Desc. |
+| -- | -- | -- | -- | -- |
+| `declare_ownership` | Owner | `address` | Candidate address for new owner. | |
+| `accept_ownership` | Owner candidate | `address` |  | Owner is now caller. |
+| `set_metadata_uri` | Owner | `bytes` | metadata | See [TZIP-16](https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-16/tzip-16.md). |
+| `pause` | Owner | | |
+| `approve_unpause` | Manager | | |
+| `unpause` | *any* | | |
+| `control` | Owner | `pair address bool` | <ul><li>manager address</li><li>`True` to add, `False` to remove</li></ul> | |
+| `run` | Owner | | | Transfers ownership to contract and set state to `Running`|
+| `require` | Owner | `nat` | new `required` value | |
+| `set_duration` | Owner | `pair nat nat` | <ul><li>minimum validity duration</li><li>maximum validity duration</li></ul> | |
+| `propose` | Manager | `pair (lambda Unit (list operation)) (pair nat bool))` | <ul><li>lambda value for operations</li><li>validity duration</li><li>approved by calling manager</li></ul> | |
+| `validate` | Manager | `nat` | proposal id | |
+| `execute` | *any* | `nat` | proposal id | |
+| `propose_feeless` | Manager | `pair (lambda Unit (list operation)) (pair nat (pair bool (pair signature key))))` | <ul><li>lambda value for operations</li><li>validity duration</li><li>approved by calling manager</li><li>data signed by manager</li><li>manager's public key</li></ul> | |
+| `validate` | Manager | `pair nat (pair signature key)` | <ul><li>proposal id</li><li>data signed by manager</li><li>manager's public key</li></ul> | |
+| `get_manager_counter` | *any* | `address` | manager address | view (TZIP4) to get the counter of a manager |
+| `get_approvals` | *any* | `nat` | proposal id |  view (TZIP4) to get the set of managers that approved the proposal |
+
 ## Example usage scenario
 
 The Usage scenario presented here has an owner and three managers:
 
-| State | Action |
-| -- | -- |
-| - | Contract is deployed with parameters:<ul><li>owner: (an address)</li><li>required: `1`</li>min_duration: `3600` (one hour)</li><li>max_duration: `15552000` (180 days)</li></ul> |
-| Starting | `owner` calls `control` to add manager 1 |
-| Starting | `owner` calls `control` to add manager 2 |
-| Starting | `owner` calls `control` to add manager 3 |
-| Starting | `owner` calls `require` to set required number of approvals to `2` |
-| Starting | `owner` calls `run`; it transfers the contract ownership to managers |
-| Running | `manager1` calls `propose` to propose an action (for example call another contract) |
-| Running | `manager2` calls `approve` to approve it (with proposal id `0`) |
-| Running | `manager3` calls `approve` to approve it (with proposal id `0`) |
-| Running | `owner` calls `execute` with proposal id `0` to execute the proposed action |
-| Running | `manager2` calls `propose` to pause the contract |
-| Running | `manager1` calls `approve` to approve and approve the contract pausing (with proposal id `1`) |
-| Running | `owner` calls `execute` with proposal id `1`|
-| Paused | `manager3` calls `approve_unpause` |
-| Paused | `manager2` calls `approve_unpause` |
-| Paused | `owner` calls `unpause` |
-| Running | ... |
-
-## Test scenario
-
-The first time, install dependencies with:
-```
-$ npm i
-```
-
-Execute the test scenario ([00-test.js](./tests/00-tests.js)) with:
-
-```bash
-$ npm test
-```
+| State | Caller | Action |
+| -- | -- | -- |
+| - | *any* | Contract is deployed with parameters:<ul><li>owner: (an address)</li><li>required: `1`</li>min_duration: `3600` (one hour)</li><li>max_duration: `15552000` (180 days)</li></ul> |
+| Starting | Owner | `control` to add manager 1 |
+| Starting | Owner | `control` to add manager 2 |
+| Starting | Owner | `control` to add manager 3 |
+| Starting | Owner | `require` to set required number of approvals to `2` |
+| Starting | Owner | `run`; it transfers the contract ownership to managers |
+| Running | Manager 1 | `propose` to propose an action (for example call another contract) |
+| Running | Manager 2 | `approve` to approve it (with proposal id `0`) |
+| Running | Manager3 | `approve` to approve it (with proposal id `0`) |
+| Running | Owner | `execute` with proposal id `0` to execute the proposed action |
+| Running | Manager 2 | `propose` to pause the contract |
+| Running | Manager 1 | `approve` to approve and approve the contract pausing (with proposal id `1`) |
+| Running | Owner | `execute` with proposal id `1`|
+| Paused | Manager 3 | `approve_unpause` |
+| Paused | Manager 2 | `approve_unpause` |
+| Paused | Owner | `unpause` |
+| Running | ... | ... |
