@@ -169,7 +169,7 @@ The feeless approach splits the process in two:
 | `max_duration` | `nat` | Maximum validity duration of a proposal. |
 | `id_count` | `nat` | Id of next proposal. |
 | `manager` | `map address nat` | Map of managers; a manager is associated to a counter (security data for feeless process). |
-| `proposal` | `map nat (pair nat (pair (set address) (lambda Unit (list operation))))` | Map of proposals; a proposal is associated to: <ul><li>validity duration</li><li>set of approvers</li><li>list of operations (as a lambda)</li></ul> |
+| `proposal` | `map nat (pair nat (pair (set address) (lambda Unit (list operation))))` | Map of proposals; a proposal is associated to: <ul><li>expiration date</li><li>set of approvers</li><li>list of operations (as a lambda)</li></ul> |
 | `owner_candidate` | `option address` | Optional address of owner candidate. |
 | `approve_unpause_set` | `set address` | Set of addresses that approve unpausing the contract. |
 | `_state` | `nat` | <ul><li>`O` : Starting</li><li>`1` : Running</li><li>`2` : Paused</li></ul>
