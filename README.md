@@ -40,7 +40,7 @@ A proposal is made of a list of operations materialised as a lambda value of typ
 
 A lambda value is an anonymous function that can be stored, passed as an argument to a function or an entry point, and executed programmatically.
 
-Passing a lambda value rather than a list of operations is necessary because in Michleson there is no literal for operations; operations are only obtained with the *transfer* instruction.
+Passing a lambda value rather than a list of operations is necessary because in Michleson there is no literal for operations (for security reason); operations are only obtained with the *transfer* instruction.
 
 A proposal also has an expiration duration; it cannot be executed beyond the expiration date, which is the date of proposal plus the expiration duration.
 
@@ -112,6 +112,29 @@ The table below presents the entrypoints to go from one state to another
 | Paused | Running | `unpause` |
 
 > Note that the `unpause` mechanism uses its own approval mechanism: the required number of manager needs to call entrypoint `approve_unpause` for the `unpause` entrypoint to be executable.
+
+## Number of required managers
+
+The best practice to setup the multisig process is that the maximum value for the `required` data (number of required managers to execute the operations) is the *number of registered managers minus 1*.
+
+This rule is coded in the contract in the execution condition `r7` of the `require` entrypoint:
+
+```js
+entry %require(new_required : nat) {
+  called by owner
+  state is Running
+  require {
+    r7 : 0 < new_required < manager.count()
+  }
+  effect {
+    required := new_required
+  }
+}
+```
+
+This is for security reason: if one of the manager's private key is compromised, it is necessary to have one extra manager to vote for the removal of the compromised manager.
+
+The extra manager may typically be the initial owner of the contract.
 
 ## Feeless
 

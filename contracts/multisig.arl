@@ -147,7 +147,7 @@ entry %require(new_required : nat) {
   called by owner
   state is Running
   require {
-    r7 : 0 < new_required <= manager.count()
+    r7 : 0 < new_required < manager.count()
   }
   effect {
     required := new_required
