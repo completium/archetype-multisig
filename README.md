@@ -151,10 +151,10 @@ The feeless approach splits the process in two:
 | `require` | Owner | `nat` | new `required` value | |
 | `set_duration` | Owner | `pair nat nat` | <ul><li>minimum validity duration</li><li>maximum validity duration</li></ul> | |
 | `propose` | Manager | `pair (lambda Unit (list operation)) (pair nat bool))` | <ul><li>lambda value for operations</li><li>validity duration</li><li>approved by calling manager</li></ul> | |
-| `validate` | Manager | `nat` | proposal id | |
+| `approve` | Manager | `nat` | proposal id | |
 | `execute` | *any* | `nat` | proposal id | |
 | `propose_feeless` | Manager | `pair (lambda Unit (list operation)) (pair nat (pair bool (pair signature key))))` | <ul><li>lambda value for operations</li><li>validity duration</li><li>approved by calling manager</li><li>data signed by manager</li><li>manager's public key</li></ul> | |
-| `validate` | Manager | `pair nat (pair signature key)` | <ul><li>proposal id</li><li>data signed by manager</li><li>manager's public key</li></ul> | |
+| `approve_feeless` | Manager | `pair nat (pair signature key)` | <ul><li>proposal id</li><li>data signed by manager</li><li>manager's public key</li></ul> | |
 | `get_manager_counter` | *any* | `address` | manager address | view (TZIP4) to get the counter of a manager |
 | `get_approvals` | *any* | `nat` | proposal id |  view (TZIP4) to get the set of managers that approved the proposal |
 
