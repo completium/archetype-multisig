@@ -5,7 +5,8 @@ const errors = {
   INVALID_CALLER    : '"InvalidCaller"',
   NOT_APPROVED      : '"NOT_APPROVED"',
   EXPIRED_PROPOSAL  : '"EXPIRED_PROPOSAL"',
-  INVALID_SIGNATURE : '"INVALID_SIGNATURE"'
+  INVALID_SIGNATURE : '"INVALID_SIGNATURE"',
+  INVALID_STATE     : '"InvalidState"'
 }
 
 setQuiet(true);
@@ -17,8 +18,8 @@ let dummy;
 let multisig;
 
 // constants
-const MAX_DURATION = 180 * 24 * 60 * 60
-const MIN_DURATION = 60 * 60
+const MAX_DURATION = 180 * 24 * 60 * 60 // 180 days
+const MIN_DURATION = 60 * 60            // 1 hour
 const now = Date.now() / 1000
 
 const owner = getAccount('alice');
@@ -470,4 +471,74 @@ describe("Feeless process (propose, approve)", async () => {
     actual_result = expected_result
   });
 
+});
+
+describe("Pause / Unpause", async () => {
+  it("Manager1 proposes and approves to pause", async () => {
+    const code = getCode(multisig.address, "pause", "unit", "Unit");
+    const expired_duration = 48 * 60 * 60; // 48h
+    const approved_by_caller = 'True';
+    const arg = `(Pair ${code} (Pair ${expired_duration} ${approved_by_caller}))`
+    await multisig.propose({
+      argMichelson: arg,
+      as: manager1.pkh
+    })
+  });
+  it("Manager2 and Manager3 approve", async () => {
+    await multisig.approve({
+      arg: {
+        proposal_id: proposal_id
+      },
+      as: manager2.pkh
+    });
+    await multisig.approve({
+      arg: {
+        proposal_id: proposal_id
+      },
+      as: manager3.pkh
+    })
+  });
+  it("Owner executes", async () => {
+    await multisig.execute({
+      arg: {
+        proposal_id: proposal_id
+      },
+      as: owner.pkh
+    });
+  });
+  it("Manager 1 cannot propose", async () => {
+    const code = getCode(multisig.address, "require", "nat", "10");
+    const expired_duration = 48 * 60 * 60; // 48h
+    const approved_by_caller = 'True';
+    const arg = `(Pair ${code} (Pair ${expired_duration} ${approved_by_caller}))`
+    await expectToThrow(async () => {
+      await multisig.propose({
+        argMichelson: arg,
+        as: manager1.pkh
+      })
+    }, errors.INVALID_STATE)
+  });
+  it("Managers (2 and 3) approve unpause", async () => {
+    await multisig.approve_unpause({
+      as: manager2.pkh
+    });
+    await multisig.approve_unpause({
+      as: manager3.pkh
+    })
+  });
+  it("Owner unpauses", async () => {
+    await multisig.unpause({
+      as: owner.pkh
+    });
+  });
+  it("Manager 1 can now propose", async () => {
+    const code = getCode(multisig.address, "set_duration", "(pair nat nat)", `(Pair 60 ${MAX_DURATION})`);
+    const expired_duration = 48 * 60 * 60; // 48h
+    const approved_by_caller = 'True';
+    const arg = `(Pair ${code} (Pair ${expired_duration} ${approved_by_caller}))`
+    await multisig.propose({
+      argMichelson: arg,
+      as: manager1.pkh
+    })
+  });
 })

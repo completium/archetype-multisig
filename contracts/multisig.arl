@@ -86,9 +86,22 @@ transition pause() {
   from Running to Paused
 }
 
+variable approve_unpause_set : set<address> = []
+
+entry approve_unpause () {
+  called by manager
+  state is Paused
+  effect {
+    approve_unpause_set.add(caller)
+  }
+}
+
 transition unpause() {
-  called by owner
   from Paused to Running
+  when { approve_unpause_set.length() >= required }
+  with effect {
+    approve_unpause_set := []
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -100,7 +113,7 @@ entry control(maddr : address, allowed : bool) {
   called by owner
   //state is Starting or Running
   require {
-    r4 : allowed <> manager.contains(maddr)
+    r4 : allowed <> manager.contains(maddr);
   }
   effect {
     if allowed then
@@ -138,6 +151,15 @@ entry %require(new_required : nat) {
   }
   effect {
     required := new_required
+  }
+}
+
+entry set_duration(min : duration, max : duration) {
+  called by owner
+  state is Running
+  effect {
+    min_duration := min;
+    max_duration := max;
   }
 }
 
