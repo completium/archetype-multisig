@@ -40,13 +40,13 @@ The lambda value to returns a list of one operation that calls an entrypoint of 
   DROP;                                    # drops the Unit argument
   NIL operation;                           # stacks the empty operation list
   PUSH address "${contract_address}";      # stacks the contract address
-  CONTRACT %${entrypoint_name} ${type};    # creates an option of contract's entrypoin (from address)
-  IF_NONE                                  # if contract entry not found
+  CONTRACT %${entrypoint_name} ${type};    # creates an option of contract's entrypoint (from address)
+  IF_NONE                                  # if contract address or entry not found
     { PUSH string "EntryNotFound";         # stacks error message
       FAILWITH }                           # fails
     {  };
   PUSH mutez 0;                            # stacks number of tez to send contract
-  PUSH ${type} ${value};                   # stacks entry point argument
+  PUSH ${type} ${value};                   # stacks entrypoint argument
   TRANSFER_TOKENS;                         # generates operation
   CONS;                                    # adds it to the empty operation list
 }
@@ -86,7 +86,7 @@ The contract has 3 states :
 | Running | Contract ownership is transferred to the contract itself (`owner = selfaddress`). The Propose/approve/execute process is operational.
 | Paused | No proposal can be submitted. |
 
-Note that in `Running` state, the owner of the contract is the contract itself. This implies that changes in the contract parameters must follow the propose/approve/execute process (including pausing the contract).
+> Note that in `Running` state, the owner of the contract is the contract itself. This implies that changes in the contract parameters must follow the propose/approve/execute process (including pausing the contract).
 
 ### Transitions
 
@@ -98,7 +98,7 @@ The table below presents the entrypoints to go from one state to another
 | Running | Paused | `pause` |
 | Paused | Running | `unpause` |
 
-Note that the `unpause` mechanism uses its own approval mechanism: the required number of manager needs to call entrypoint `approve_unpause` for the `unpause` entrypoint to be executable.
+> Note that the `unpause` mechanism uses its own approval mechanism: the required number of manager needs to call entrypoint `approve_unpause` for the `unpause` entrypoint to be executable.
 
 ## Feeless
 
