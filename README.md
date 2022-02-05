@@ -42,7 +42,7 @@ A lambda value is an anonymous function that can be stored, passed as an argumen
 
 Passing a lambda value rather than a list of operations is necessary because in Michleson there is no literal for operations (for security reason); operations are only obtained with the *transfer* instruction.
 
-A proposal also has an expiration duration; it cannot be executed beyond the expiration date, which is the date of proposal plus the expiration duration.
+A proposal also has a *validity duration*; it cannot be executed beyond the expiration date, which is the date of proposal plus the validity duration.
 
 ### Calling one entrypoint
 

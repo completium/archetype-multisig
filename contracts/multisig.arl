@@ -169,12 +169,12 @@ entry set_duration(min : duration, max : duration) {
 
 entry propose(
   actions_to_exec : lambda<unit, list<operation>>,
-  expiration_duration : duration,
+  validity : duration,
   approved_by_caller : bool) {
   called by manager
   state is Running
   require {
-    r3 : min_duration <= expiration_duration <= max_duration otherwise WRONG_DURATION
+    r3 : min_duration <= validity <= max_duration otherwise WRONG_DURATION
   }
   effect {
     var init_approvals : set<address> = [];
@@ -182,7 +182,7 @@ entry propose(
       init_approvals.add(caller);
     pending.add({
       id_count;
-      (now + expiration_duration);
+      (now + validity);
       init_approvals;
       actions_to_exec
     });
@@ -219,23 +219,23 @@ entry execute(proposal_id : nat) {
 
 entry propose_feeless(
   actions_to_exec : lambda<unit, list<operation>>,
-  expiration_duration : duration,
+  validity : duration,
   approved_by_caller : bool,
   manager_key : key,
   sig : signature) {
   state is Running
   require {
-    r8 : min_duration <= expiration_duration <= max_duration otherwise WRONG_DURATION
+    r8 : min_duration <= validity <= max_duration otherwise WRONG_DURATION
   }
   effect {
     var pkh = key_address(manager_key);
-    dorequire(check_signature(manager_key, sig, pack((pkh, manager[pkh].counter, "propose", actions_to_exec, expiration_duration))), INVALID_SIGNATURE);
+    dorequire(check_signature(manager_key, sig, pack((pkh, manager[pkh].counter, "propose", actions_to_exec, validity))), INVALID_SIGNATURE);
     var init_approvals : set<address> = [];
     if approved_by_caller then
       init_approvals.add(caller);
     pending.add({
       id_count;
-      (now + expiration_duration);
+      (now + validity);
       init_approvals;
       actions_to_exec
     });

@@ -116,10 +116,10 @@ describe("Change requested value", async () => {
   it("Propose 'request' action by manager1", async () => {
     const code = getCode(multisig.address, "require", "nat", "2");
 
-    const expired_duration = 48 * 60 * 60; // 48h
+    const validity_duration = 48 * 60 * 60; // 48h
     const approved_by_caller = 'True';
 
-    const arg = `(Pair ${code} (Pair ${expired_duration} ${approved_by_caller}))`
+    const arg = `(Pair ${code} (Pair ${validity_duration} ${approved_by_caller}))`
     await multisig.propose({
       argMichelson: arg,
       as: manager1.pkh
@@ -216,11 +216,11 @@ describe("Test Multisig", async () => {
     expected_result = 1
     const code = getCode(dummy.address, "process", "nat", "" + expected_result);
 
-    const expired_duration = 48 * 60 * 60; // 48h
+    const validity_duration = 48 * 60 * 60; // 48h
     const approved_by_caller = 'True';
 
     await expectToThrow(async () => {
-      const arg = `(Pair ${code} (Pair ${expired_duration} ${approved_by_caller}))`
+      const arg = `(Pair ${code} (Pair ${validity_duration} ${approved_by_caller}))`
       await multisig.propose({
         argMichelson: arg,
         as: owner.pkh
@@ -232,10 +232,10 @@ describe("Test Multisig", async () => {
     expected_result = 2
     const code = getCode(dummy.address, "process", "nat", "" + expected_result);
 
-    const expired_duration = 48 * 60 * 60; // 48h
+    const validity_duration = 48 * 60 * 60; // 48h
     const approved_by_caller = 'True';
 
-    const arg = `(Pair ${code} (Pair ${expired_duration} ${approved_by_caller}))`
+    const arg = `(Pair ${code} (Pair ${validity_duration} ${approved_by_caller}))`
     await multisig.propose({
       argMichelson: arg,
       as: manager1.pkh
@@ -316,10 +316,10 @@ describe("Test Multisig 2", async () => {
     expected_result = 3
     const code = getCode(dummy.address, "process", "nat", expected_result);
 
-    const expired_duration = 48 * 60 * 60; // 48h
+    const validity_duration = 48 * 60 * 60; // 48h
     const approved_by_caller = 'False';
 
-    const arg = `(Pair ${code} (Pair ${expired_duration} ${approved_by_caller}))`
+    const arg = `(Pair ${code} (Pair ${validity_duration} ${approved_by_caller}))`
     await multisig.propose({
       argMichelson: arg,
       as: manager1.pkh
@@ -374,7 +374,7 @@ describe("Test Multisig 2", async () => {
 describe("Feeless process (propose, approve)", async () => {
 
   it("Manager1 proposes and approves (injected by owner)", async () =>{
-    const expired_duration   = 48 * 60 * 60; // 48h
+    const validity_duration   = 48 * 60 * 60; // 48h
     const approved_by_caller = 'True';
     const pk                 = manager1.pubk
     const pkh                = manager1.pkh
@@ -386,13 +386,13 @@ describe("Feeless process (propose, approve)", async () => {
 
     // Build signature
     const dataType = exprMichelineToJson("(pair address (pair nat (pair string (pair (lambda unit (list operation)) nat))))");
-    const data     = exprMichelineToJson(`(Pair "${pkh}" (Pair ${counter} (Pair "${entryname}" (Pair ${code} ${expired_duration}))))`);
+    const data     = exprMichelineToJson(`(Pair "${pkh}" (Pair ${counter} (Pair "${entryname}" (Pair ${code} ${validity_duration}))))`);
 
     const tosign    = packTyped(data, dataType);
     const signature = await sign(tosign, { as: manager1.name }); // signed by manager1
     const sig       = signature.prefixSig
 
-    const arg = `(Pair ${code} (Pair ${expired_duration} (Pair ${approved_by_caller} (Pair "${pk}" "${sig}"))))`
+    const arg = `(Pair ${code} (Pair ${validity_duration} (Pair ${approved_by_caller} (Pair "${pk}" "${sig}"))))`
     await multisig.propose_feeless({
       argMichelson: arg,
       as: owner.pkh
@@ -476,9 +476,9 @@ describe("Feeless process (propose, approve)", async () => {
 describe("Pause / Unpause", async () => {
   it("Manager1 proposes and approves to pause", async () => {
     const code = getCode(multisig.address, "pause", "unit", "Unit");
-    const expired_duration = 48 * 60 * 60; // 48h
+    const validity_duration = 48 * 60 * 60; // 48h
     const approved_by_caller = 'True';
-    const arg = `(Pair ${code} (Pair ${expired_duration} ${approved_by_caller}))`
+    const arg = `(Pair ${code} (Pair ${validity_duration} ${approved_by_caller}))`
     await multisig.propose({
       argMichelson: arg,
       as: manager1.pkh
@@ -508,9 +508,9 @@ describe("Pause / Unpause", async () => {
   });
   it("Manager 1 cannot propose", async () => {
     const code = getCode(multisig.address, "require", "nat", "10");
-    const expired_duration = 48 * 60 * 60; // 48h
+    const validity_duration = 48 * 60 * 60; // 48h
     const approved_by_caller = 'True';
-    const arg = `(Pair ${code} (Pair ${expired_duration} ${approved_by_caller}))`
+    const arg = `(Pair ${code} (Pair ${validity_duration} ${approved_by_caller}))`
     await expectToThrow(async () => {
       await multisig.propose({
         argMichelson: arg,
@@ -533,9 +533,9 @@ describe("Pause / Unpause", async () => {
   });
   it("Manager 1 can now propose", async () => {
     const code = getCode(multisig.address, "set_duration", "(pair nat nat)", `(Pair 60 ${MAX_DURATION})`);
-    const expired_duration = 48 * 60 * 60; // 48h
+    const validity_duration = 48 * 60 * 60; // 48h
     const approved_by_caller = 'True';
-    const arg = `(Pair ${code} (Pair ${expired_duration} ${approved_by_caller}))`
+    const arg = `(Pair ${code} (Pair ${validity_duration} ${approved_by_caller}))`
     await multisig.propose({
       argMichelson: arg,
       as: manager1.pkh
