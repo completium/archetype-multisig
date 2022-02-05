@@ -136,6 +136,20 @@ The feeless approach splits the process in two:
 
  Each manager is associated to a counter that is incremented by the contract each time a feeless entry is called. This is a security feature to prevent from replay attack (so that one cannot use the signed data twice).
 
+## Storage
+
+| Element | Michelson type | Desc. |
+| -- | -- | -- |
+| `owner` | `address` | Contract's owner address. |
+| `required` | `nat` | Minimum number of approvals to execute operations. |
+| `min_duration` | `nat` | Minimum validity duration of a proposal. |
+| `max_duration` | `nat` | Maximum validity duration of a proposal. |
+| `id_count` | `nat` | Id of next proposal. |
+| `manager` | `map address nat` | Map of managers; a manager is associated to a counter (security data for feeless process). |
+| `proposal` | `map nat (pair nat (pair (set address) (lambda Unit (list operation))))` | Map of proposals; a proposal is associated to: <ul><li>validity duration</li><li>set of approvers</li><li>list of operations (as a lambda)</li></ul> |
+| `owner_candidate` | `option address` | Optional address of owner candidate. |
+| `approve_unpause_set` | `set address` | Set of addresses that approve unpausing the contract. |
+
 ## API
 
 | Entrypoint | Called by | Argument Michelson type | Argument | Desc. |
@@ -162,22 +176,21 @@ The feeless approach splits the process in two:
 
 The Usage scenario presented here has an owner and three managers:
 
-| State | Caller | Action |
-| -- | -- | -- |
-| - | *any* | Contract is deployed with parameters:<ul><li>owner: (an address)</li><li>required: `1`</li>min_duration: `3600` (one hour)</li><li>max_duration: `15552000` (180 days)</li></ul> |
-| Starting | Owner | `control` to add manager 1 |
-| Starting | Owner | `control` to add manager 2 |
-| Starting | Owner | `control` to add manager 3 |
-| Starting | Owner | `require` to set required number of approvals to `2` |
-| Starting | Owner | `run`; it transfers the contract ownership to managers |
-| Running | Manager 1 | `propose` to propose an action (for example call another contract) |
-| Running | Manager 2 | `approve` to approve it (with proposal id `0`) |
-| Running | Manager3 | `approve` to approve it (with proposal id `0`) |
-| Running | Owner | `execute` with proposal id `0` to execute the proposed action |
-| Running | Manager 2 | `propose` to pause the contract |
-| Running | Manager 1 | `approve` to approve and approve the contract pausing (with proposal id `1`) |
-| Running | Owner | `execute` with proposal id `1`|
-| Paused | Manager 3 | `approve_unpause` |
-| Paused | Manager 2 | `approve_unpause` |
-| Paused | Owner | `unpause` |
-| Running | ... | ... |
+* Contract is deployed with parameters:<ul><li>owner: (an address)</li><li>required: `1`</li>min_duration: `3600` (one hour)</li><li>max_duration: `15552000` (180 days)</li></ul>
+* Owner calls `control` to add manager 1
+* Owner calls `control` to add manager 2
+* Owner calls `control` to add manager 3
+* Owner calls `require` to set required number of approvals to `2`
+* Owner calls `run`; it transfers the contract ownership to managers and sets the contract state to `Running`
+* Manager 1 calls `propose` to propose an action (for example call another contract)
+* Manager 2 calls `approve` to approve it (with proposal id `0`)
+* Manager 3 calls `approve` to approve it (with proposal id `0`)
+* Owner calls `execute` with proposal id `0` to execute the proposed action
+* Manager 2 calls `propose` to pause the contract
+* Manager 1 calls `approve` (with proposal id `1`)
+* Owner calls `execute` with proposal id `1`; as a result contract is paused
+* Manager 3 calls `approve_unpause`
+* Manager 2 calls `approve_unpause`
+* Owner calls `unpause`
+* ...
+
