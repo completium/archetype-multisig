@@ -12,14 +12,14 @@ The process is three steps:
 The [Archetype](https://archetype-lang.org/) contract may be deployed with [Completium](https://completium.com/docs/cli) with the following command:
 
 ```bash
-$ completium-cli deploy ./contract/multisig.arl --parameters '{ "owner" : "$OWNER", "required" : $REQUIRED, "min_duration" : "$MIN", "max_duration" : "$MAX" }'
+$ completium-cli deploy ./contract/multisig.arl --parameters '{ "owner" : "$OWNER", "required" : "$REQUIRED", "min_duration" : "$MIN", "max_duration" : "$MAX" }'
 ```
 
 where:
 * `$OWNER` is the address of the owner
 * `$REQUIRED` is the minimum number of approvals
-* `$MIN` is the minimum validity duration of a proposal
-* `$MAX` is the maximum validity duration of a proposal
+* `$MIN` is the minimum validity duration of a proposal (in seconds)
+* `$MAX` is the maximum validity duration of a proposal (in seconds)
 
 ## Run tests
 
@@ -81,13 +81,14 @@ The table below presents the Michelson syntax for the main types and correspondi
 | -- | -- | -- |
 | `bool` | `bool` | `True`, `False` |
 | `nat` | `nat` | `2022` |
-| `int` | `int` | `-42` |
+| `int` | `int` | `2022`, `-42` |
 | `string` | `string` | `"Hello multisig"` |
 | `address` | `address` | `"tz1hyc1CRQpjskJUUaGrh85UZXPi6kU4JuGd"` |
 | `bytes` | `bytes` | `0x000001` |
 | `option<TYPE>` | `option TYPE` | example of `option nat`: `None`, `Some 42` |
 | `list<TYPE>` | `list TYPE` | example of `list nat`: `{ 42; 5567; 756786 }` |
 | `(TYPE1 * TYPE2)` | `pair TYPE1 TYPE2` | example of `pair nat string`: `Pair 45 "Hello"` |
+| `map<TYPE1, TYPE2>` | `map TYPE1 TYPE2` | example of `map nat string`: `{ Elt 45 "Hello" }` |
 
 ## State Machine
 
@@ -172,7 +173,7 @@ The feeless approach splits the process in two:
 | `proposal` | `map nat (pair nat (pair (set address) (lambda Unit (list operation))))` | Map of proposals; a proposal is associated to: <ul><li>expiration date</li><li>set of approvers</li><li>list of operations (as a lambda)</li></ul> |
 | `owner_candidate` | `option address` | Optional address of owner candidate. |
 | `approve_unpause_set` | `set address` | Set of addresses that approve unpausing the contract. |
-| `_state` | `nat` | <ul><li>`O` : Starting</li><li>`1` : Running</li><li>`2` : Paused</li></ul>
+| `_state` | `int` | <ul><li>`O` : Starting</li><li>`1` : Running</li><li>`2` : Paused</li></ul>
 
 ## API
 
