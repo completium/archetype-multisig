@@ -111,9 +111,9 @@ transition unpause() {
 
 entry control(maddr : address, allowed : bool) {
   called by owner
-  //state is Starting or Running
   require {
-    r4 : allowed <> manager.contains(maddr);
+    r4 : state = Starting or state = Running;
+    r5 : allowed <> manager.contains(maddr);
   }
   effect {
     if allowed then
