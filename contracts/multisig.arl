@@ -59,9 +59,11 @@ entry declare_ownership(candidate : address) {
 }
 
 entry claim_ownership() {
-  called by opt_get(owner_candidate)
+  require {
+    ownership_r1: (owner_candidate ? the = caller : false) otherwise "INVALID_CALLER"
+  }
   effect {
-    owner := opt_get(owner_candidate);
+    owner := caller;
     owner_candidate := none
   }
 }
@@ -135,7 +137,7 @@ transition run() {
   }
   from Starting to Running
   with effect {
-    owner := selfaddress
+    owner := self_address
   }
 }
 
@@ -224,12 +226,14 @@ entry propose_feeless(
   manager_key : key,
   sig : signature) {
   state is Running
+  constant {
+    pkh is key_to_address(manager_key)
+  }
   require {
-    r8 : min_duration <= validity <= max_duration otherwise WRONG_DURATION
+    r8 : min_duration <= validity <= max_duration otherwise WRONG_DURATION;
+    r9 : check_signature(manager_key, sig, pack((pkh, manager[pkh].counter, "propose", actions_to_exec, validity))) otherwise INVALID_SIGNATURE;
   }
   effect {
-    var pkh = key_address(manager_key);
-    dorequire(check_signature(manager_key, sig, pack((pkh, manager[pkh].counter, "propose", actions_to_exec, validity))), INVALID_SIGNATURE);
     var init_approvals : set<address> = [];
     if approved_by_caller then
       init_approvals.add(caller);
@@ -245,9 +249,13 @@ entry propose_feeless(
 
 entry approve_feeless(proposal_id : nat, manager_key : key, sig : signature) {
   state is Running
+  constant {
+    pkh is key_to_address(manager_key)
+  }
+  require {
+    r10 : check_signature(manager_key, sig, pack((pkh, manager[pkh].counter, "approve", proposal_id))) otherwise INVALID_SIGNATURE
+  }
   effect {
-    var pkh = key_address(manager_key);
-    dorequire(check_signature(manager_key, sig, pack((pkh, manager[pkh].counter, "approve", proposal_id))), INVALID_SIGNATURE);
     manager[pkh].counter += 1;
     if pending[proposal_id].expiration < now then
       pending.remove(proposal_id)
@@ -261,10 +269,9 @@ entry approve_feeless(proposal_id : nat, manager_key : key, sig : signature) {
 //----------------------------------------------------------------------------
 
 getter get_manager_counter(pkh : address) : nat {
-  return (if manager.contains(pkh) then manager[pkh].counter else 0)
+  return (manager[pkh]?.counter ? the : 0)
 }
 
 getter get_approvals(proposal_id : nat) : set<address> {
-  var empty : set<address> = [];
-  return (if pending.contains(proposal_id) then pending[proposal_id].approvals else empty)
+  return (pending[proposal_id]?.approvals ? the : [])
 }

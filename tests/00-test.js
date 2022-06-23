@@ -2,11 +2,11 @@ const { deploy, getAccount, setQuiet, expectToThrow, setMockupNow, setEndpoint, 
 const assert = require('assert');
 
 const errors = {
-  INVALID_CALLER    : '"InvalidCaller"',
+  INVALID_CALLER    : '"INVALID_CALLER"',
   NOT_APPROVED      : '"NOT_APPROVED"',
   EXPIRED_PROPOSAL  : '"EXPIRED_PROPOSAL"',
   INVALID_SIGNATURE : '"INVALID_SIGNATURE"',
-  INVALID_STATE     : '"InvalidState"'
+  INVALID_STATE     : '"INVALID_STATE"'
 }
 
 setQuiet(true);

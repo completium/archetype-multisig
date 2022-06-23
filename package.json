@@ -16,7 +16,7 @@
   "author": "Completium",
   "license": "MIT",
   "dependencies": {
-    "@completium/completium-cli": "^0.3.20",
+    "@completium/completium-cli": "^0.4.1",
     "mocha": "^9.2.0"
   }
 }
