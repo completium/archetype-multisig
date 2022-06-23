@@ -12,12 +12,13 @@ archetype multisig(
 // Errors
 //----------------------------------------------------------------------------
 
-constant EXPIRED_PROPOSAL    : string = "EXPIRED_PROPOSAL"
-constant NOT_APPROVED        : string = "NOT_APPROVED"
-constant INVALID_SIGNATURE   : string = "INVALID_SIGNATURE"
-constant WRONG_DURATION      : string = "WRONG_DURATION"
-constant CONTRACT_PAUSED     : string = "CONTRACT_PAUSED"
 constant CONTRACT_NOT_PAUSED : string = "CONTRACT_NOT_PAUSED"
+constant CONTRACT_PAUSED     : string = "CONTRACT_PAUSED"
+constant EXPIRED_PROPOSAL    : string = "EXPIRED_PROPOSAL"
+constant INVALID_SIGNATURE   : string = "INVALID_SIGNATURE"
+constant NOT_APPROVED        : string = "NOT_APPROVED"
+constant PROPOSAL_NOT_FOUND  : string = "PROPOSAL_NOT_FOUND"
+constant WRONG_DURATION      : string = "WRONG_DURATION"
 
 //----------------------------------------------------------------------------
 // Assets
@@ -166,22 +167,22 @@ entry set_duration(min : duration, max : duration) {
 }
 
 //----------------------------------------------------------------------------
-// propose, approve, execute
+// Interanl operation
 //----------------------------------------------------------------------------
 
-entry propose(
-  actions_to_exec : lambda<unit, list<operation>>,
-  validity : duration,
-  approved_by_caller : bool) {
-  called by manager
-  state is Running
+entry do_propose(
+  actions_to_exec    : lambda<unit, list<operation>>,
+  validity           : duration,
+  approved_by_caller : bool,
+  sender             : address) {
+  called by self_address
   require {
     r3 : min_duration <= validity <= max_duration otherwise WRONG_DURATION
   }
   effect {
     var init_approvals : set<address> = [];
     if approved_by_caller then
-      init_approvals.add(caller);
+      init_approvals.add(sender);
     pending.add({
       id_count;
       (now + validity);
@@ -192,14 +193,39 @@ entry propose(
   }
 }
 
+entry do_approve(proposal_id : nat, sender: address) {
+  called by self_address
+  constant {
+    p_expiration ?is pending[proposal_id]?.expiration otherwise PROPOSAL_NOT_FOUND
+  }
+  effect {
+    if p_expiration < now then
+      pending.remove(proposal_id)
+    else
+      pending[proposal_id].approvals.add(sender)
+  }
+}
+
+//----------------------------------------------------------------------------
+// propose, approve, execute
+//----------------------------------------------------------------------------
+
+entry propose(
+  actions_to_exec    : lambda<unit, list<operation>>,
+  validity           : duration,
+  approved_by_caller : bool) {
+  called by manager
+  state is Running
+  effect {
+    transfer 0tz to entry self.do_propose(actions_to_exec, validity, approved_by_caller, caller)
+  }
+}
+
 entry approve(proposal_id : nat) {
   called by manager
   state is Running
   effect {
-    if pending[proposal_id].expiration < now then
-      pending.remove(proposal_id)
-    else
-      pending[proposal_id].approvals.add(caller)
+    transfer 0tz to entry self.do_approve(proposal_id, caller)
   }
 }
 
@@ -227,40 +253,28 @@ entry propose_feeless(
   sig : signature) {
   state is Running
   constant {
-    pkh is key_to_address(manager_key)
+    pkh     is key_to_address(manager_key);
+    to_sign is pack((pkh, manager[pkh].counter, "propose", actions_to_exec, validity))
   }
   require {
-    r8 : min_duration <= validity <= max_duration otherwise WRONG_DURATION;
-    r9 : check_signature(manager_key, sig, pack((pkh, manager[pkh].counter, "propose", actions_to_exec, validity))) otherwise INVALID_SIGNATURE;
+    r9 : check_signature(manager_key, sig, to_sign) otherwise INVALID_SIGNATURE;
   }
   effect {
-    var init_approvals : set<address> = [];
-    if approved_by_caller then
-      init_approvals.add(caller);
-    pending.add({
-      id_count;
-      (now + validity);
-      init_approvals;
-      actions_to_exec
-    });
-    id_count += 1;
+    transfer 0tz to entry self.do_propose(actions_to_exec, validity, approved_by_caller, pkh)
   }
 }
 
 entry approve_feeless(proposal_id : nat, manager_key : key, sig : signature) {
   state is Running
   constant {
-    pkh is key_to_address(manager_key)
+    pkh     is key_to_address(manager_key);
+    to_sign is pack((pkh, manager[pkh].counter, "approve", proposal_id))
   }
   require {
-    r10 : check_signature(manager_key, sig, pack((pkh, manager[pkh].counter, "approve", proposal_id))) otherwise INVALID_SIGNATURE
+    r10 : check_signature(manager_key, sig, to_sign) otherwise INVALID_SIGNATURE
   }
   effect {
-    manager[pkh].counter += 1;
-    if pending[proposal_id].expiration < now then
-      pending.remove(proposal_id)
-    else
-      pending[proposal_id].approvals.add(pkh)
+    transfer 0tz to entry self.do_approve(proposal_id, pkh)
   }
 }
 
