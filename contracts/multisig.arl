@@ -167,7 +167,7 @@ entry set_duration(min : duration, max : duration) {
 }
 
 //----------------------------------------------------------------------------
-// Interanl operation
+// Internal operation
 //----------------------------------------------------------------------------
 
 entry do_propose(
@@ -245,6 +245,14 @@ entry execute(proposal_id : nat) {
 // Fee-less process
 //----------------------------------------------------------------------------
 
+record rec_to_sign_propose_feeless {
+  pf_pkh : address;
+  pf_counter: nat;
+  pf_entry : string;
+  pf_lambda: lambda<unit, list<operation>>;
+  pf_validity : duration;
+}
+
 entry propose_feeless(
   actions_to_exec : lambda<unit, list<operation>>,
   validity : duration,
@@ -262,6 +270,13 @@ entry propose_feeless(
   effect {
     transfer 0tz to entry self.do_propose(actions_to_exec, validity, approved_by_caller, pkh)
   }
+}
+
+record rec_to_sign_approve_feeless {
+  af_pkh : address;
+  af_counter: nat;
+  af_entry : string;
+  af_proposal_id: nat;
 }
 
 entry approve_feeless(proposal_id : nat, manager_key : key, sig : signature) {
