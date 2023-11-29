@@ -29,13 +29,13 @@ export class Dummy {
         }, params)).address;
         this.address = address;
     }
-    async process(v: att.Nat, params: Partial<ex.Parameters>): Promise<any> {
+    async process(v: att.Nat, params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "process", process_arg_to_mich(v), params);
         }
         throw new Error("Contract not initialised");
     }
-    async set_owner(v: att.Address, params: Partial<ex.Parameters>): Promise<any> {
+    async set_owner(v: att.Address, params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "set_owner", set_owner_arg_to_mich(v), params);
         }
@@ -56,14 +56,14 @@ export class Dummy {
     async get_owner(): Promise<att.Address> {
         if (this.address != undefined) {
             const storage = await ex.get_raw_storage(this.address);
-            return att.mich_to_address((storage as att.Mpair).args[0]);
+            return att.Address.from_mich((storage as att.Mpair).args[0]);
         }
         throw new Error("Contract not initialised");
     }
     async get_result(): Promise<att.Nat> {
         if (this.address != undefined) {
             const storage = await ex.get_raw_storage(this.address);
-            return att.mich_to_nat((storage as att.Mpair).args[1]);
+            return att.Nat.from_mich((storage as att.Mpair).args[1]);
         }
         throw new Error("Contract not initialised");
     }

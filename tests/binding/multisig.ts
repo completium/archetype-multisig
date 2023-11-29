@@ -26,7 +26,7 @@ export class rec_to_sign_propose_feeless implements att.ArchetypeType {
         return att.micheline_equals(this.to_mich(), v.to_mich());
     }
     static from_mich(input: att.Micheline): rec_to_sign_propose_feeless {
-        return new rec_to_sign_propose_feeless(att.mich_to_address((input as att.Mpair).args[0]), att.mich_to_nat((input as att.Mpair).args[1]), att.mich_to_string((input as att.Mpair).args[2]), (input as att.Mpair).args[3], att.mich_to_duration((input as att.Mpair).args[4]));
+        return new rec_to_sign_propose_feeless(att.Address.from_mich((input as att.Mpair).args[0]), att.Nat.from_mich((input as att.Mpair).args[1]), att.mich_to_string((input as att.Mpair).args[2]), (input as att.Mpair).args[3], att.Duration.from_mich((input as att.Mpair).args[4]));
     }
 }
 export class rec_to_sign_approve_feeless implements att.ArchetypeType {
@@ -41,7 +41,7 @@ export class rec_to_sign_approve_feeless implements att.ArchetypeType {
         return att.micheline_equals(this.to_mich(), v.to_mich());
     }
     static from_mich(input: att.Micheline): rec_to_sign_approve_feeless {
-        return new rec_to_sign_approve_feeless(att.mich_to_address((input as att.Mpair).args[0]), att.mich_to_nat((input as att.Mpair).args[1]), att.mich_to_string((input as att.Mpair).args[2]), att.mich_to_nat((input as att.Mpair).args[3]));
+        return new rec_to_sign_approve_feeless(att.Address.from_mich((input as att.Mpair).args[0]), att.Nat.from_mich((input as att.Mpair).args[1]), att.mich_to_string((input as att.Mpair).args[2]), att.Nat.from_mich((input as att.Mpair).args[3]));
     }
 }
 export const rec_to_sign_propose_feeless_mich_type: att.MichelineType = att.pair_array_to_mich_type([
@@ -73,7 +73,7 @@ export class pending_value implements att.ArchetypeType {
         return att.micheline_equals(this.to_mich(), v.to_mich());
     }
     static from_mich(input: att.Micheline): pending_value {
-        return new pending_value(att.mich_to_date((input as att.Mpair).args[0]), att.mich_to_list((input as att.Mpair).args[1], x => { return att.mich_to_address(x); }), (input as att.Mpair).args[2]);
+        return new pending_value(att.mich_to_date((input as att.Mpair).args[0]), att.mich_to_list((input as att.Mpair).args[1], x => { return att.Address.from_mich(x); }), (input as att.Mpair).args[2]);
     }
 }
 export const manager_value_mich_type: att.MichelineType = att.prim_annot_to_mich_type("nat", []);
@@ -217,103 +217,103 @@ export class Multisig {
         this.get_manager_counter_callback_address = (await deploy_get_manager_counter_callback(params)).address;
         this.get_approvals_callback_address = (await deploy_get_approvals_callback(params)).address;
     }
-    async declare_ownership(candidate: att.Address, params: Partial<ex.Parameters>): Promise<any> {
+    async declare_ownership(candidate: att.Address, params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "declare_ownership", declare_ownership_arg_to_mich(candidate), params);
         }
         throw new Error("Contract not initialised");
     }
-    async claim_ownership(params: Partial<ex.Parameters>): Promise<any> {
+    async claim_ownership(params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "claim_ownership", claim_ownership_arg_to_mich(), params);
         }
         throw new Error("Contract not initialised");
     }
-    async set_metadata_uri(idata: att.Bytes, params: Partial<ex.Parameters>): Promise<any> {
+    async set_metadata_uri(idata: att.Bytes, params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "set_metadata_uri", set_metadata_uri_arg_to_mich(idata), params);
         }
         throw new Error("Contract not initialised");
     }
-    async pause(params: Partial<ex.Parameters>): Promise<any> {
+    async pause(params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "pause", pause_arg_to_mich(), params);
         }
         throw new Error("Contract not initialised");
     }
-    async approve_unpause(params: Partial<ex.Parameters>): Promise<any> {
+    async approve_unpause(params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "approve_unpause", approve_unpause_arg_to_mich(), params);
         }
         throw new Error("Contract not initialised");
     }
-    async unpause(params: Partial<ex.Parameters>): Promise<any> {
+    async unpause(params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "unpause", unpause_arg_to_mich(), params);
         }
         throw new Error("Contract not initialised");
     }
-    async control(maddr: att.Address, allowed: boolean, params: Partial<ex.Parameters>): Promise<any> {
+    async control(maddr: att.Address, allowed: boolean, params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "control", control_arg_to_mich(maddr, allowed), params);
         }
         throw new Error("Contract not initialised");
     }
-    async run(params: Partial<ex.Parameters>): Promise<any> {
+    async run(params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "run", run_arg_to_mich(), params);
         }
         throw new Error("Contract not initialised");
     }
-    async require(new_required: att.Nat, params: Partial<ex.Parameters>): Promise<any> {
+    async require(new_required: att.Nat, params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "require", require_arg_to_mich(new_required), params);
         }
         throw new Error("Contract not initialised");
     }
-    async set_duration(min: att.Duration, max: att.Duration, params: Partial<ex.Parameters>): Promise<any> {
+    async set_duration(min: att.Duration, max: att.Duration, params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "set_duration", set_duration_arg_to_mich(min, max), params);
         }
         throw new Error("Contract not initialised");
     }
-    async do_propose(actions_to_exec: att.Micheline, validity: att.Duration, approved_by_caller: boolean, sender: att.Address, params: Partial<ex.Parameters>): Promise<any> {
+    async do_propose(actions_to_exec: att.Micheline, validity: att.Duration, approved_by_caller: boolean, sender: att.Address, params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "do_propose", do_propose_arg_to_mich(actions_to_exec, validity, approved_by_caller, sender), params);
         }
         throw new Error("Contract not initialised");
     }
-    async do_approve(proposal_id: att.Nat, sender: att.Address, params: Partial<ex.Parameters>): Promise<any> {
+    async do_approve(proposal_id: att.Nat, sender: att.Address, params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "do_approve", do_approve_arg_to_mich(proposal_id, sender), params);
         }
         throw new Error("Contract not initialised");
     }
-    async propose(actions_to_exec: att.Micheline, validity: att.Duration, approved_by_caller: boolean, params: Partial<ex.Parameters>): Promise<any> {
+    async propose(actions_to_exec: att.Micheline, validity: att.Duration, approved_by_caller: boolean, params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "propose", propose_arg_to_mich(actions_to_exec, validity, approved_by_caller), params);
         }
         throw new Error("Contract not initialised");
     }
-    async approve(proposal_id: att.Nat, params: Partial<ex.Parameters>): Promise<any> {
+    async approve(proposal_id: att.Nat, params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "approve", approve_arg_to_mich(proposal_id), params);
         }
         throw new Error("Contract not initialised");
     }
-    async execute(proposal_id: att.Nat, params: Partial<ex.Parameters>): Promise<any> {
+    async execute(proposal_id: att.Nat, params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "execute", execute_arg_to_mich(proposal_id), params);
         }
         throw new Error("Contract not initialised");
     }
-    async propose_feeless(actions_to_exec: att.Micheline, validity: att.Duration, approved_by_caller: boolean, manager_key: att.Key, sig: att.Signature, params: Partial<ex.Parameters>): Promise<any> {
+    async propose_feeless(actions_to_exec: att.Micheline, validity: att.Duration, approved_by_caller: boolean, manager_key: att.Key, sig: att.Signature, params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "propose_feeless", propose_feeless_arg_to_mich(actions_to_exec, validity, approved_by_caller, manager_key, sig), params);
         }
         throw new Error("Contract not initialised");
     }
-    async approve_feeless(proposal_id: att.Nat, manager_key: att.Key, sig: att.Signature, params: Partial<ex.Parameters>): Promise<any> {
+    async approve_feeless(proposal_id: att.Nat, manager_key: att.Key, sig: att.Signature, params: Partial<ex.Parameters>): Promise<att.CallResult> {
         if (this.address != undefined) {
             return await ex.call(this.address, "approve_feeless", approve_feeless_arg_to_mich(proposal_id, manager_key, sig), params);
         }
@@ -426,7 +426,7 @@ export class Multisig {
             if (this.get_manager_counter_callback_address != undefined) {
                 const entrypoint = new att.Entrypoint(new att.Address(this.get_manager_counter_callback_address), "callback");
                 await ex.call(this.address, "get_manager_counter", att.getter_args_to_mich(get_manager_counter_arg_to_mich(pkh), entrypoint), params);
-                return await ex.get_callback_value<att.Nat>(this.get_manager_counter_callback_address, x => { return att.mich_to_nat(x); });
+                return await ex.get_callback_value<att.Nat>(this.get_manager_counter_callback_address, x => { return att.Nat.from_mich(x); });
             }
         }
         throw new Error("Contract not initialised");
@@ -436,7 +436,7 @@ export class Multisig {
             if (this.get_approvals_callback_address != undefined) {
                 const entrypoint = new att.Entrypoint(new att.Address(this.get_approvals_callback_address), "callback");
                 await ex.call(this.address, "get_approvals", att.getter_args_to_mich(get_approvals_arg_to_mich(proposal_id), entrypoint), params);
-                return await ex.get_callback_value<Array<att.Address>>(this.get_approvals_callback_address, x => { return att.mich_to_list(x, x => { return att.mich_to_address(x); }); });
+                return await ex.get_callback_value<Array<att.Address>>(this.get_approvals_callback_address, x => { return att.mich_to_list(x, x => { return att.Address.from_mich(x); }); });
             }
         }
         throw new Error("Contract not initialised");
@@ -444,49 +444,49 @@ export class Multisig {
     async get_owner(): Promise<att.Address> {
         if (this.address != undefined) {
             const storage = await ex.get_raw_storage(this.address);
-            return att.mich_to_address((storage as att.Mpair).args[0]);
+            return att.Address.from_mich((storage as att.Mpair).args[0]);
         }
         throw new Error("Contract not initialised");
     }
     async get_required(): Promise<att.Nat> {
         if (this.address != undefined) {
             const storage = await ex.get_raw_storage(this.address);
-            return att.mich_to_nat((storage as att.Mpair).args[1]);
+            return att.Nat.from_mich((storage as att.Mpair).args[1]);
         }
         throw new Error("Contract not initialised");
     }
     async get_max_duration(): Promise<att.Duration> {
         if (this.address != undefined) {
             const storage = await ex.get_raw_storage(this.address);
-            return att.mich_to_duration((storage as att.Mpair).args[2]);
+            return att.Duration.from_mich((storage as att.Mpair).args[2]);
         }
         throw new Error("Contract not initialised");
     }
     async get_min_duration(): Promise<att.Duration> {
         if (this.address != undefined) {
             const storage = await ex.get_raw_storage(this.address);
-            return att.mich_to_duration((storage as att.Mpair).args[3]);
+            return att.Duration.from_mich((storage as att.Mpair).args[3]);
         }
         throw new Error("Contract not initialised");
     }
     async get_id_count(): Promise<att.Nat> {
         if (this.address != undefined) {
             const storage = await ex.get_raw_storage(this.address);
-            return att.mich_to_nat((storage as att.Mpair).args[4]);
+            return att.Nat.from_mich((storage as att.Mpair).args[4]);
         }
         throw new Error("Contract not initialised");
     }
     async get_manager(): Promise<manager_container> {
         if (this.address != undefined) {
             const storage = await ex.get_raw_storage(this.address);
-            return att.mich_to_map((storage as att.Mpair).args[5], (x, y) => [att.mich_to_address(x), att.mich_to_nat(y)]);
+            return att.mich_to_map((storage as att.Mpair).args[5], (x, y) => [att.Address.from_mich(x), att.Nat.from_mich(y)]);
         }
         throw new Error("Contract not initialised");
     }
     async get_pending_value(key: att.Nat): Promise<pending_value | undefined> {
         if (this.address != undefined) {
             const storage = await ex.get_raw_storage(this.address);
-            const data = await ex.get_big_map_value(BigInt(att.mich_to_int((storage as att.Mpair).args[6]).toString()), key.to_mich(), pending_key_mich_type);
+            const data = await ex.get_big_map_value(BigInt(att.Int.from_mich((storage as att.Mpair).args[6]).toString()), key.to_mich(), pending_key_mich_type);
             if (data != undefined) {
                 return pending_value.from_mich(data);
             }
@@ -499,7 +499,7 @@ export class Multisig {
     async has_pending_value(key: att.Nat): Promise<boolean> {
         if (this.address != undefined) {
             const storage = await ex.get_raw_storage(this.address);
-            const data = await ex.get_big_map_value(BigInt(att.mich_to_int((storage as att.Mpair).args[6]).toString()), key.to_mich(), pending_key_mich_type);
+            const data = await ex.get_big_map_value(BigInt(att.Int.from_mich((storage as att.Mpair).args[6]).toString()), key.to_mich(), pending_key_mich_type);
             if (data != undefined) {
                 return true;
             }
@@ -512,23 +512,23 @@ export class Multisig {
     async get_owner_candidate(): Promise<att.Option<att.Address>> {
         if (this.address != undefined) {
             const storage = await ex.get_raw_storage(this.address);
-            return att.mich_to_option((storage as att.Mpair).args[8], x => { return att.mich_to_address(x); });
+            return att.Option.from_mich((storage as att.Mpair).args[8], x => { return att.Address.from_mich(x); });
         }
         throw new Error("Contract not initialised");
     }
     async get_approve_unpause_set(): Promise<Array<att.Address>> {
         if (this.address != undefined) {
             const storage = await ex.get_raw_storage(this.address);
-            return att.mich_to_list((storage as att.Mpair).args[9], x => { return att.mich_to_address(x); });
+            return att.mich_to_list((storage as att.Mpair).args[9], x => { return att.Address.from_mich(x); });
         }
         throw new Error("Contract not initialised");
     }
     async get_metadata_value(key: string): Promise<att.Bytes | undefined> {
         if (this.address != undefined) {
             const storage = await ex.get_raw_storage(this.address);
-            const data = await ex.get_big_map_value(BigInt(att.mich_to_int((storage as att.Mpair).args[10]).toString()), att.string_to_mich(key), att.prim_annot_to_mich_type("string", []));
+            const data = await ex.get_big_map_value(BigInt(att.Int.from_mich((storage as att.Mpair).args[10]).toString()), att.string_to_mich(key), att.prim_annot_to_mich_type("string", []));
             if (data != undefined) {
-                return att.mich_to_bytes(data);
+                return att.Bytes.from_mich(data);
             }
             else {
                 return undefined;
@@ -539,7 +539,7 @@ export class Multisig {
     async has_metadata_value(key: string): Promise<boolean> {
         if (this.address != undefined) {
             const storage = await ex.get_raw_storage(this.address);
-            const data = await ex.get_big_map_value(BigInt(att.mich_to_int((storage as att.Mpair).args[10]).toString()), att.string_to_mich(key), att.prim_annot_to_mich_type("string", []));
+            const data = await ex.get_big_map_value(BigInt(att.Int.from_mich((storage as att.Mpair).args[10]).toString()), att.string_to_mich(key), att.prim_annot_to_mich_type("string", []));
             if (data != undefined) {
                 return true;
             }
@@ -553,7 +553,7 @@ export class Multisig {
         if (this.address != undefined) {
             const storage = await ex.get_raw_storage(this.address);
             const state = (storage as att.Mpair).args[7];
-            switch (att.mich_to_int(state).to_number()) {
+            switch (att.Int.from_mich(state).to_number()) {
                 case 0: return states.Starting;
                 case 1: return states.Running;
                 case 2: return states.Paused;
