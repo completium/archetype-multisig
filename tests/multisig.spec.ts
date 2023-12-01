@@ -1,4 +1,4 @@
-import { Address, Bytes, Duration, Micheline, MichelineType, Nat, pair_to_mich, Signature, string_to_mich } from '@completium/archetype-ts-types'
+import { Address, Duration, Micheline, MichelineType, Nat, Signature } from '@completium/archetype-ts-types'
 import { Account, delay_mockup_now_by_hour, expect_to_fail, expr_micheline_to_json, get_account, pack, set_mockup, set_mockup_now, set_quiet } from '@completium/experiment-ts'
 
 import assert from 'assert';
@@ -51,7 +51,7 @@ const getCode = (dest: Address, entrypoint: string, typ: string, value: string):
   return expr_micheline_to_json(input)
 }
 
-describe("[Multisig] Deploy", async () => {
+describe("[Multisig] Deploy", () => {
   it("Dummy", async () => {
     await dummy.deploy(owner.get_address(), { as: owner })
   });
@@ -61,7 +61,7 @@ describe("[Multisig] Deploy", async () => {
   });
 })
 
-describe("[Multisig] Init", async () => {
+describe("[Multisig] Init", () => {
 
   it("Add 3 managers", async () => {
     await multisig.control(manager1.get_address(), true, {
@@ -83,7 +83,7 @@ describe("[Multisig] Init", async () => {
 
 })
 
-describe("[Multisig] Change requested value", async () => {
+describe("[Multisig] Change requested value", () => {
 
   it("Propose 'request' action by manager1", async () => {
     const code = getCode(multisig.get_address(), "require", "nat", "2");
@@ -124,7 +124,7 @@ describe("[Multisig] Change requested value", async () => {
 
 })
 
-describe("[Multisig] Basic check on Dummy contract", async () => {
+describe("[Multisig] Basic check on Dummy contract", () => {
 
   it("Invalid caller", async () => {
     await expect_to_fail(async () => {
@@ -147,7 +147,7 @@ describe("[Multisig] Basic check on Dummy contract", async () => {
 
 })
 
-describe("[Multisig] Test Multisig", async () => {
+describe("[Multisig] Test Multisig", () => {
 
   it("Set Multisig as Dummy's owner", async () => {
     await dummy.set_owner(multisig.get_address(), {
@@ -199,7 +199,7 @@ describe("[Multisig] Test Multisig", async () => {
     })
   });
 
-  it("Set 'now' beyond expiration date", async () => {
+  it("Set 'now' beyond expiration date", () => {
     set_mockup_now(now)
     delay_mockup_now_by_hour(49);
   });
@@ -214,7 +214,7 @@ describe("[Multisig] Test Multisig", async () => {
 
   });
 
-  it("Set 'now' before expiration date", async () => {
+  it("Set 'now' before expiration date", () => {
     set_mockup_now(now)
     delay_mockup_now_by_hour(47)
   });
@@ -235,7 +235,7 @@ describe("[Multisig] Test Multisig", async () => {
 
 })
 
-describe("[Multisig] Test Multisig 2", async () => {
+describe("[Multisig] Test Multisig 2", () => {
 
   it("Add proposal by Manager1", async () => {
     const code = getCode(dummy.get_address(), "process", "nat", "3");
@@ -259,7 +259,7 @@ describe("[Multisig] Test Multisig 2", async () => {
     })
   });
 
-  it("Set 'now' before expiration date", async () => {
+  it("Set 'now' before expiration date", () => {
     set_mockup_now(now)
     delay_mockup_now_by_hour(47)
   });
@@ -278,7 +278,7 @@ describe("[Multisig] Test Multisig 2", async () => {
 
 })
 
-describe("[Multisig] Feeless process (propose, approve)", async () => {
+describe("[Multisig] Feeless process (propose, approve)", () => {
 
   it("Manager1 proposes and approves (injected by owner)", async () => {
     const validity_duration = new Duration("48h")
@@ -304,7 +304,7 @@ describe("[Multisig] Feeless process (propose, approve)", async () => {
 
     // Build invalid signature
     const dataType = expr_micheline_to_json("(pair address (pair nat (pair string nat)))") as MichelineType;
-    const data = expr_micheline_to_json(`(Pair "${pkh}" (Pair ${counter} (Pair "${entryname}" ${proposal_id})))`);
+    const data = expr_micheline_to_json(`(Pair "${pkh}" (Pair ${counter} (Pair "${entryname}" ${proposal_id.toString()})))`);
 
     const tosign = pack(data, dataType);
     const signature : Signature = await manager1.sign(tosign); // signed by manager1 instead of manager2
@@ -352,7 +352,7 @@ describe("[Multisig] Feeless process (propose, approve)", async () => {
 
 });
 
-describe("[Multisig] Pause / Unpause", async () => {
+describe("[Multisig] Pause / Unpause", () => {
   it("Manager1 proposes and approves to pause", async () => {
     const code = getCode(multisig.get_address(), "pause", "unit", "Unit");
 
